@@ -1,0 +1,9 @@
+# Meeting Notes — Acme Storefront Design Review Round 4
+**Date:** November 24, 2025  
+**Attendees:** Dave Miller (Acme), Sarah Lin (Nimbus), Marcus Vance (Nimbus UI Lead)  
+
+### Discussion Points:
+1. Acme approved the Figma storefront mockups on Oct 22 (Iteration 2).
+2. Dave Miller requested a 4th complete overhaul of the homepage layout, navigation drawer, and PDP hero carousel following new branding guidelines from Acme's newly hired CMO.
+3. Marcus noted that the contract explicitly limits design iterations to 2 rounds (§2.6) and that rebuilding the frontend component templates will require 32 hours of UI rework ($4,800).
+4. Dave confirmed the team should proceed with the new CMO layout and prepare the variation order for approval.

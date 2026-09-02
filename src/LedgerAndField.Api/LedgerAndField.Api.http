@@ -1,0 +1,6 @@
+@LedgerAndField.Api_HostAddress = http://localhost:5288
+
+GET {{LedgerAndField.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scopeline — Scope &amp; Revenue Recovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#14213D;
+  --navy-2:#1D2E52;
+  --ink:#1B1B1B;
+  --paper:#F7F5F0;
+  --paper-2:#EFEBE1;
+  --line:#D8D2C2;
+  --orange:#E85D2E;
+  --orange-dim:#F3D9CC;
+  --steel:#5C6B73;
+  --steel-dim:#AEB9BD;
+  --green:#2F6F4E;
+  --green-dim:#D8E8DD;
+  --amber:#B4831C;
+  --amber-dim:#F1E3C4;
+  --white:#FFFFFF;
+  --radius:2px;
+  --shadow: 0 1px 0 rgba(20,33,61,0.06), 0 2px 8px rgba(20,33,61,0.05);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:'IBM Plex Sans', sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:'Oswald', sans-serif;text-transform:uppercase;letter-spacing:0.03em;margin:0;font-weight:600;color:var(--navy);}
+.mono{font-family:'IBM Plex Mono', monospace;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+::selection{background:var(--orange-dim);}
+
+/* ================= APP SHELL ================= */
+#app{display:flex; min-height:100vh;}
+.sidebar{width:248px;min-width:248px;background:var(--navy);color:#DCE2EE;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+.brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.brand .mark{display:flex;align-items:center;gap:9px;}
+.brand .swatch{width:14px;height:14px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;}
+.brand h1{color:#fff;font-size:16px;letter-spacing:0.06em;}
+.brand .tag{font-size:10.5px;color:#8C9AB5;letter-spacing:0.09em;margin-top:5px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.nav{padding:14px 10px;flex:1;overflow-y:auto;}
+.nav .group-label{font-size:10px;letter-spacing:0.12em;color:#66759A;padding:14px 12px 6px;text-transform:uppercase;font-weight:600;}
+.nav button.nav-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:#B9C3D9;padding:9px 12px;border-radius:var(--radius);font-size:13.5px;font-weight:500;margin-bottom:1px;}
+.nav button.nav-item .num{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5A6A8C;width:16px;flex-shrink:0;}
+.nav button.nav-item:hover{background:rgba(255,255,255,0.05);color:#fff;}
+.nav button.nav-item.active{background:var(--navy-2);color:#fff;box-shadow: inset 3px 0 0 var(--orange);}
+.sidebar-foot{padding:14px 20px 18px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:#66759A;font-family:'IBM Plex Mono',monospace;}
+.sidebar-foot .co{color:#B9C3D9;font-weight:600;margin-bottom:2px;}
+.sidebar-foot .who{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.sidebar-foot button.logout{background:none;border:1px solid rgba(255,255,255,0.15);color:#B9C3D9;padding:4px 9px;border-radius:3px;font-size:10.5px;}
+.sidebar-foot button.logout:hover{border-color:var(--orange);color:var(--orange);}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.titleblock{border-bottom:2px solid var(--navy);background:var(--white);padding:16px 32px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
+.titleblock h2{font-size:22px;color:var(--navy);}
+.titleblock .sub{font-size:12.5px;color:var(--steel);margin-top:4px;}
+.titleblock .meta{display:flex;gap:22px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--steel);border-left:1px solid var(--line);padding-left:20px;}
+.titleblock .meta div div:first-child{color:#9BA6AA;letter-spacing:0.08em;text-transform:uppercase;font-size:9.5px;}
+.titleblock .meta div div:last-child{color:var(--navy);font-weight:600;margin-top:2px;}
+.content{padding:26px 32px 60px;max-width:1280px;width:100%;margin:0 auto;flex:1;}
+
+/* ================= SHARED UI ================= */
+.grid{display:grid;gap:16px;}
+.grid.cols-4{grid-template-columns:repeat(4,1fr);}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-2{grid-template-columns:repeat(2,1fr);}
+@media (max-width:980px){.grid.cols-4{grid-template-columns:repeat(2,1fr);}.grid.cols-3{grid-template-columns:repeat(2,1fr);}}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+.kpi{background:var(--white);border:1px solid var(--line);padding:16px 18px;position:relative;}
+.kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);font-weight:600;}
+.kpi .value{font-family:'IBM Plex Mono',monospace;font-size:26px;color:var(--navy);margin-top:8px;font-weight:600;}
+.kpi .delta{font-size:11px;margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+.kpi .delta.up{color:var(--green);}
+.kpi .delta.down{color:var(--orange);}
+.kpi::before{content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:var(--kpi-accent, var(--steel-dim));}
+section.block{margin-bottom:30px;}
+section.block .block-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+section.block .block-head h3{font-size:14.5px;color:var(--navy);}
+section.block .block-head .hint{font-size:11.5px;color:var(--steel);font-family:'IBM Plex Mono',monospace;}
+
+.stamp{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;font-weight:600;text-transform:uppercase;padding:3px 8px;border:1.5px solid currentColor;border-radius:3px;transform:rotate(-1.2deg);white-space:nowrap;}
+.stamp.detected{color:var(--steel);}
+.stamp.review{color:var(--amber);}
+.stamp.confirmed{color:var(--navy);}
+.stamp.rejected{color:#8a8a8a; text-decoration:line-through;}
+.stamp.change-order{color:#7A4FB5;}
+.stamp.approved{color:var(--green);}
+.stamp.invoiced{color:#1D6E96;}
+.stamp.paid{color:var(--green);background:var(--green-dim);border-style:solid;}
+.stamp.unbilled{color:var(--orange);background:var(--orange-dim);border-style:solid;transform:rotate(1deg);}
+
+.btn{border:1px solid var(--navy);background:var(--navy);color:#fff;padding:9px 16px;font-size:12.5px;font-weight:600;letter-spacing:0.02em;border-radius:var(--radius);display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--navy-2);}
+.btn.ghost{background:transparent;color:var(--navy);}
+.btn.ghost:hover{background:var(--paper-2);}
+.btn.orange{background:var(--orange);border-color:var(--orange);}
+.btn.orange:hover{background:#D24E22;}
+.btn.small{padding:6px 11px;font-size:11.5px;}
+.btn.wide{width:100%;justify-content:center;padding:11px 16px;font-size:13px;}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+.pill-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.pill-tabs button{border:1px solid var(--line);background:#fff;color:var(--steel);padding:6px 13px;font-size:12px;font-weight:600;border-radius:20px;}
+.pill-tabs button.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--steel);border-bottom:1.5px solid var(--navy);padding:8px 10px;font-weight:600;}
+td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tr:hover td{background:#FBFAF7;}
+.num-cell{font-family:'IBM Plex Mono',monospace;text-align:right;}
+.confidence-bar{width:60px;height:5px;background:var(--paper-2);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px;}
+.confidence-bar span{display:block;height:100%;background:var(--orange);}
+.empty{border:1.5px dashed var(--line);padding:34px 20px;text-align:center;color:var(--steel);font-size:13px;border-radius:var(--radius);}
+.empty h4{color:var(--steel);font-size:13px;margin-bottom:6px;letter-spacing:0.04em;}
+.progress-track{height:8px;background:var(--paper-2);border-radius:4px;overflow:hidden;display:flex;}
+.progress-track .seg{height:100%;}
+.badge-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;}
+
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+  font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;color:var(--ink);width:100%;
+}
+textarea{resize:vertical;min-height:70px;}
+label.field-label{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--steel);font-weight:600;display:block;margin-bottom:5px;}
+.field{margin-bottom:14px;}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(20,33,61,0.55);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:40px 20px;overflow-y:auto;}
+.modal-backdrop.open{display:flex;}
+.modal{background:#fff;width:100%;max-width:680px;border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.modal-head{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{font-size:16px;}
+.modal-head button{background:none;border:none;font-size:20px;color:var(--steel);}
+.modal-body{padding:22px 24px;max-height:70vh;overflow-y:auto;}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;}
+.evidence-item{border-left:3px solid var(--orange);background:var(--paper);padding:10px 12px;margin-bottom:8px;font-size:12.5px;}
+.evidence-item .src{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--steel);margin-top:5px;}
+.timeline{border-left:2px solid var(--line);margin-left:6px;padding-left:18px;}
+.timeline .t-item{position:relative;padding-bottom:16px;}
+.timeline .t-item::before{content:"";position:absolute;left:-23px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--orange);border:2px solid #fff;box-shadow:0 0 0 1px var(--orange);}
+.timeline .t-item .date{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--steel);}
+.timeline .t-item .desc{font-size:13px;margin-top:2px;}
+
+.doc-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);background:#fff;margin-bottom:8px;border-radius:var(--radius);}
+.doc-row .ext{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--steel);padding:3px 6px;border-radius:2px;min-width:34px;text-align:center;}
+.doc-row .ext.pdf{background:#B23A2E;}
+.doc-row .ext.xls{background:var(--green);}
+.doc-row .ext.doc{background:#1D6E96;}
+.doc-row .ext.img{background:var(--amber);}
+.doc-row .ext.eml{background:#7A4FB5;}
+.doc-row .ext.chat{background:#2C8C7A;}
+.doc-row .ext.tkt{background:#A85DD9;}
+.doc-row .name{font-weight:600;font-size:13px;flex:1;}
+.doc-row .meta{font-size:11px;color:var(--steel);font-family:'IBM Plex Mono',monospace;}
+
+.upload-zone{border:2px dashed var(--line);padding:26px;text-align:center;border-radius:var(--radius);background:repeating-linear-gradient(45deg, var(--paper), var(--paper) 10px, #F1EEE5 10px, #F1EEE5 20px);cursor:pointer;}
+.upload-zone:hover{border-color:var(--orange);}
+.upload-zone h4{color:var(--navy);font-size:13px;margin-bottom:4px;}
+.upload-zone p{font-size:11.5px;color:var(--steel);margin:0;}
+
+.project-card{border:1px solid var(--line);background:#fff;padding:18px 20px;border-radius:var(--radius);cursor:pointer;position:relative;}
+.project-card:hover{border-color:var(--navy);box-shadow:var(--shadow);}
+.project-card .pc-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.project-card h4{color:var(--navy);font-size:15px;}
+.project-card .client{font-size:12px;color:var(--steel);margin-top:3px;}
+.project-card .row{display:flex;justify-content:space-between;font-size:11.5px;margin-top:14px;padding-top:12px;border-top:1px solid var(--paper-2);}
+.project-card .row .v{font-family:'IBM Plex Mono',monospace;color:var(--navy);font-weight:600;}
+.project-card .flag{position:absolute;top:-1px;right:14px;background:var(--orange);color:#fff;font-size:9.5px;font-weight:700;padding:3px 7px;letter-spacing:0.05em;font-family:'IBM Plex Mono',monospace;}
+
+.clause-grid{display:grid;grid-template-columns:200px 1fr;gap:0;font-size:13px;}
+.clause-grid .k{padding:10px 12px;background:var(--paper);font-weight:600;color:var(--navy);border-bottom:1px solid var(--line);font-size:11.5px;text-transform:uppercase;letter-spacing:0.04em;}
+.clause-grid .v{padding:10px 12px;border-bottom:1px solid var(--line);}
+
+.chat-window{background:#fff;border:1px solid var(--line);border-radius:var(--radius);display:flex;flex-direction:column;height:560px;}
+.chat-log{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;}
+.msg{max-width:78%;padding:11px 14px;border-radius:6px;font-size:13.5px;line-height:1.5;}
+.msg.user{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:2px;}
+.msg.ai{align-self:flex-start;background:var(--paper);border:1px solid var(--line);border-bottom-left-radius:2px;}
+.msg.ai .ev{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--steel);font-family:'IBM Plex Mono',monospace;}
+.chat-suggest{display:flex;flex-wrap:wrap;gap:7px;padding:12px 20px;border-top:1px solid var(--line);}
+.chat-suggest button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 12px;font-size:11.5px;color:var(--navy);}
+.chat-suggest button:hover{border-color:var(--orange);color:var(--orange);}
+.chat-input-row{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line);}
+.chat-input-row input{flex:1;}
+
+.tag-type{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:var(--steel);background:var(--paper-2);padding:2px 7px;border-radius:3px;}
+.two-col{display:grid;grid-template-columns:1.3fr 0.9fr;gap:20px;}
+@media (max-width:1080px){.two-col{grid-template-columns:1fr;}}
+
+.opp-card{border:1px solid var(--line);background:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;position:relative;}
+.opp-card .oc-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.opp-card h4{font-size:14px;color:var(--ink);text-transform:none;letter-spacing:0;font-family:'IBM Plex Sans';font-weight:600;}
+.opp-card .desc{font-size:12.5px;color:var(--steel);margin-top:4px;max-width:520px;}
+.opp-card .figures{display:flex;gap:22px;margin-top:12px;flex-wrap:wrap;}
+.opp-card .figures div .l{font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--steel);}
+.opp-card .figures div .v{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--navy);font-size:14px;}
+.opp-card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--paper-2);flex-wrap:wrap;gap:10px;}
+
+.breadcrumb{font-size:11.5px;color:var(--steel);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;}
+
+/* ================= AUTH SCREEN ================= */
+.auth-shell{min-height:100vh;width:100%;display:flex;}
+.auth-side{
+  flex:1.1;background:var(--navy);color:#fff;display:flex;flex-direction:column;justify-content:center;
+  padding:60px;position:relative;overflow:hidden;
+}
+.auth-side::before{
+  content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size:36px 36px;
+}
+.auth-side .inner{position:relative;max-width:440px;}
+.auth-side .mark{display:flex;align-items:center;gap:10px;margin-bottom:34px;}
+.auth-side .swatch{width:16px;height:16px;background:var(--orange);transform:rotate(45deg);}
+.auth-side h1{color:#fff;font-size:19px;letter-spacing:0.07em;}
+.auth-side .pitch{font-family:'Oswald',sans-serif;text-transform:none;font-size:30px;line-height:1.25;color:#fff;font-weight:500;letter-spacing:0.005em;margin:20px 0 16px;}
+.auth-side .pitch b{color:var(--orange);font-weight:600;}
+.auth-side .sub{font-size:13.5px;color:#AEB9D9;line-height:1.6;}
+.auth-side .stat-row{display:flex;gap:30px;margin-top:40px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.14);}
+.auth-side .stat .v{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:#fff;}
+.auth-side .stat .l{font-size:10.5px;color:#8C9AB5;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
+.auth-form-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--paper);padding:40px 24px;}
+.auth-card{width:100%;max-width:380px;}
+.auth-card h2{font-size:20px;color:var(--navy);margin-bottom:6px;}
+.auth-card .sub{font-size:12.5px;color:var(--steel);margin-bottom:26px;}
+.auth-toggle{display:flex;background:var(--paper-2);border-radius:4px;padding:3px;margin-bottom:24px;}
+.auth-toggle button{flex:1;border:none;background:none;padding:8px;font-size:12.5px;font-weight:600;color:var(--steel);border-radius:3px;}
+.auth-toggle button.active{background:#fff;color:var(--navy);box-shadow:var(--shadow);}
+.auth-sso{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.auth-sso button{border:1px solid var(--line);background:#fff;padding:9px;border-radius:var(--radius);font-size:12.5px;font-weight:600;color:var(--ink);}
+.auth-sso button:hover{border-color:var(--navy);}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;font-size:10.5px;color:var(--steel-dim);text-transform:uppercase;letter-spacing:0.06em;}
+.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--line);}
+.auth-foot{font-size:11.5px;color:var(--steel);margin-top:18px;text-align:center;}
+.auth-foot button{background:none;border:none;color:var(--orange);font-weight:600;font-size:inherit;}
+
+/* ================= ONBOARDING ================= */
+.onb-shell{min-height:100vh;width:100%;background:var(--paper);display:flex;flex-direction:column;align-items:center;padding:50px 20px;}
+.onb-header{width:100%;max-width:640px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.onb-header .swatch{width:13px;height:13px;background:var(--orange);transform:rotate(45deg);}
+.onb-header .name{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:0.06em;color:var(--navy);font-weight:600;text-transform:uppercase;}
+.onb-steps{width:100%;max-width:640px;display:flex;gap:6px;margin:18px 0 34px;}
+.onb-steps .seg{flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden;}
+.onb-steps .seg.done{background:var(--orange);}
+.onb-steps .seg.current{background:linear-gradient(90deg, var(--orange) 50%, var(--line) 50%);}
+.onb-card{width:100%;max-width:640px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:34px 36px;}
+.onb-card .step-tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--orange);letter-spacing:0.08em;text-transform:uppercase;font-weight:600;margin-bottom:8px;}
+.onb-card h2{font-size:21px;margin-bottom:6px;}
+.onb-card .sub{font-size:13px;color:var(--steel);margin-bottom:26px;}
+.onb-actions{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--paper-2);}
+.role-pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.role-pick .opt{border:1.5px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;text-align:left;background:#fff;}
+.role-pick .opt.selected{border-color:var(--orange);background:var(--orange-dim);}
+.role-pick .opt .t{font-weight:700;color:var(--navy);font-size:13.5px;}
+.role-pick .opt .d{font-size:11.5px;color:var(--steel);margin-top:4px;}
+.source-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+.source-grid .src{border:1.5px solid var(--line);border-radius:var(--radius);padding:12px 14px;font-size:12.5px;font-weight:600;color:var(--navy);display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:#fff;}
+.source-grid .src.selected{border-color:var(--green);background:var(--green-dim);}
+.source-grid .src .chk{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--line);display:inline-block;}
+.source-grid .src.selected .chk{background:var(--green);border-color:var(--green);}
+.onb-done{text-align:center;padding:20px 0;}
+.onb-done .big-check{width:56px;height:56px;border-radius:50%;background:var(--green-dim);color:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:26px;}
+
+.assist-toggle{position:fixed;bottom:22px;right:26px;z-index:60;}
+.footnote{font-size:11px;color:var(--steel-dim);margin-top:24px;font-family:'IBM Plex Mono',monospace;text-align:center;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   SESSION (auth + onboarding) — separate from workspace data
+   ============================================================ */
+const SESSION_KEY = "sl_session_v1";
+function loadSession(){
+  try{ const r = localStorage.getItem(SESSION_KEY); if(r) return JSON.parse(r); }catch(e){}
+  return { loggedIn:false, authMode:"login", email:"", onboarded:false, onbStep:0,
+           onbData:{ name:"", company:"", role:"", projectName:"", client:"", value:"", sources:[] } };
+}
+function saveSession(){ localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+let session = loadSession();
+
+/* ============================================================
+   WORKSPACE DATA (mock)
+   ============================================================ */
+const STORE_KEY = "sl_state_v1";
+function seedData(){
+  return {
+    company: { name:"Nimbus Digital", plan:"Team Plan · Trial" },
+    activeProjectId: "p1",
+    projects: [
+      {
+        id:"p1", name:"Northwind Retail — Platform Modernization", client:"Northwind Retail Corp",
+        value: 185000, currency:"USD", start:"2025-06-01", end:"2026-01-31", status:"Active",
+        contract:{
+          fileName:"Northwind_SOW_v3_Signed.pdf", uploaded:true,
+          extracted:{
+            "Original Scope":"Migration of the legacy storefront to a headless commerce platform, covering 12 core modules per SOW Appendix A.",
+            "Contract Value":"$185,000 (Fixed Price)",
+            "Exclusions / Out of Scope":"Third-party payment gateway fees; content migration beyond 500 SKUs; post-launch training beyond 2 sessions.",
+            "Payment Terms":"Net 15, milestone-based billing across 4 milestones.",
+            "Change Request Process":"§5 — Any request altering scope, timeline, or cost by more than $2,000 requires a written Change Request signed by both parties.",
+            "Notice Period":"§5.2 — Vendor must submit a Change Request within 5 business days of a scope-affecting ask.",
+            "Relevant Terms":"§7 Client-requested acceleration billable at 1.5x; §9 rework from vendor error not billable; §9.1 rework from client-directed change billable at standard rate."
+          }
+        },
+        docs:[
+          {id:"d1", name:"Slack_Export_Nov_2025.json", type:"chat", date:"2025-11-04", size:"310 KB"},
+          {id:"d2", name:"JIRA-882_SSO_Integration_Request.pdf", type:"tkt", date:"2025-11-06", size:"48 KB"},
+          {id:"d3", name:"Email_Thread_Client_Ask.eml", type:"eml", date:"2025-11-07", size:"12 KB"},
+          {id:"d4", name:"Sprint_Review_Notes_Nov18.docx", type:"doc", date:"2025-11-18", size:"38 KB"},
+          {id:"d5", name:"Change_Log_Nov.xlsx", type:"xls", date:"2025-11-15", size:"64 KB"},
+          {id:"d6", name:"Invoice_Milestone_3.pdf", type:"pdf", date:"2025-11-30", size:"210 KB"},
+        ],
+        opportunities:[
+          {
+            id:"o1", type:"Scope Change", title:"SSO Integration — Not in Original SOW",
+            desc:"Client requested enterprise SSO (Okta) support mid-sprint; not listed among the 12 modules in Appendix A.",
+            estCost: 4200, billable: 9800, confidence: 0.92, status:"review",
+            clause:"§5 — Change Request required for scope changes over $2,000",
+            evidence:[
+              {text:"Jira ticket JIRA-882 requests SSO integration outside the original module list.", src:"JIRA-882_SSO_Integration_Request.pdf"},
+              {text:"Slack thread shows the client explicitly asking for Okta support.", src:"Slack_Export_Nov_2025.json"},
+            ],
+            timeline:[
+              {date:"Nov 4, 2025", desc:"Client raises SSO requirement in Slack."},
+              {date:"Nov 6, 2025", desc:"Jira ticket JIRA-882 filed by the delivery team."},
+            ]
+          },
+          {
+            id:"o2", type:"Completed, Unbilled", title:"Custom Reporting Dashboard — Built, Not Invoiced",
+            desc:"Team built a custom analytics dashboard requested in a client call; work is complete but absent from any milestone invoice.",
+            estCost: 3100, billable: 7400, confidence: 0.85, status:"confirmed",
+            clause:"§5 — Change Request Process",
+            evidence:[
+              {text:"Change log lists the dashboard build with no linked invoice.", src:"Change_Log_Nov.xlsx"},
+              {text:"Sprint review notes confirm the dashboard was demoed and accepted.", src:"Sprint_Review_Notes_Nov18.docx"},
+            ],
+            timeline:[
+              {date:"Oct 20, 2025", desc:"Client requests reporting dashboard on a call."},
+              {date:"Nov 10, 2025", desc:"Dashboard completed and demoed."},
+              {date:"Nov 18, 2025", desc:"Logged internally — no change request issued."},
+            ]
+          },
+          {
+            id:"o3", type:"Client Instruction", title:"Additional Admin Role — Multi-Warehouse Permissions",
+            desc:"Sprint review notes record the client asking for a new admin role not in the original permissions spec.",
+            estCost: 1600, billable: 3200, confidence: 0.74, status:"detected",
+            clause:"§5 — Change Request required for scope changes over $2,000",
+            evidence:[{text:"Sprint review notes record the client's request for a new admin role.", src:"Sprint_Review_Notes_Nov18.docx"}],
+            timeline:[{date:"Nov 18, 2025", desc:"Client requests multi-warehouse admin role in sprint review."}]
+          },
+          {
+            id:"o4", type:"Acceleration", title:"Weekend Sprint — Client-Moved Launch Date",
+            desc:"Client moved the launch date up by two weeks; team ran two weekend sprints to compensate at the client's request.",
+            estCost: 6800, billable: 11200, confidence: 0.88, status:"change-order",
+            clause:"§7 — Client-requested acceleration billable at 1.5x",
+            evidence:[
+              {text:"Email thread shows the client requesting the earlier launch date.", src:"Email_Thread_Client_Ask.eml"},
+              {text:"Change log records the weekend hours logged by the team.", src:"Change_Log_Nov.xlsx"},
+            ],
+            timeline:[
+              {date:"Oct 28, 2025", desc:"Client requests launch two weeks earlier."},
+              {date:"Nov 1–Nov 16", desc:"Two weekend sprints logged."},
+            ],
+            changeOrder:{ number:"CR-011", status:"approved", submitted:"2025-11-20", approved:"2025-11-24" }
+          },
+          {
+            id:"o5", type:"Approved / Uninvoiced", title:"Loyalty Points Module — Approved Change, Not Billed",
+            desc:"Approved change request for a loyalty points module; work is complete but the value hasn't appeared on any milestone invoice.",
+            estCost: 5200, billable: 12500, confidence: 0.95, status:"approved",
+            clause:"§5 — Change Request Process",
+            evidence:[{text:"Executed change request confirms client approval of the loyalty module.", src:"Change_Log_Nov.xlsx"}],
+            timeline:[
+              {date:"Sep 15, 2025", desc:"Change request CR-006 signed by client."},
+              {date:"Oct 28, 2025", desc:"Loyalty module completed."},
+              {date:"Nov 30, 2025", desc:"Milestone 3 invoiced — CR-006 value absent."},
+            ],
+            changeOrder:{ number:"CR-006", status:"approved", submitted:"2025-09-10", approved:"2025-09-15" },
+            invoiced: 0
+          },
+          {
+            id:"o6", type:"Rework", title:"Checkout Flow Rework — Internal Design Miss",
+            desc:"Checkout redesign had to be redone after a missed responsive breakpoint — determined to be a vendor-side error, not billable.",
+            estCost: 2400, billable: 4100, confidence: 0.61, status:"rejected",
+            clause:"§9 — Rework due to vendor error not billable",
+            evidence:[{text:"Sprint notes attribute the rework to a missed breakpoint on the team's side.", src:"Sprint_Review_Notes_Nov18.docx"}],
+            timeline:[{date:"Nov 18, 2025", desc:"Rework identified as internal QA miss, not client-directed."}]
+          },
+        ],
+        invoices:[
+          {id:"i1", number:"Milestone 1", date:"2025-08-01", amount:46250, related:"—", collected:46250},
+          {id:"i2", number:"Milestone 2", date:"2025-10-01", amount:46250, related:"CR-006 (missing)", collected:46250},
+          {id:"i3", number:"Milestone 3", date:"2025-11-30", amount:46250, related:"CR-011 (partial)", collected:0},
+        ]
+      },
+      {
+        id:"p2", name:"Vertex Logistics — Internal Tools Suite", client:"Vertex Logistics Inc.",
+        value: 92000, currency:"USD", start:"2025-08-15", end:"2026-02-01", status:"Active",
+        contract:{fileName:"", uploaded:false, extracted:null}, docs:[], opportunities:[], invoices:[]
+      },
+      {
+        id:"p3", name:"Bright Path Nonprofit — Website Rebuild", client:"Bright Path Foundation",
+        value: 34000, currency:"USD", start:"2025-09-01", end:"2025-12-15", status:"Closing Out",
+        contract:{fileName:"BrightPath_SOW.pdf", uploaded:true, extracted:{
+            "Original Scope":"Rebuild of public website and donation portal, 8 pages plus CMS.",
+            "Contract Value":"$34,000 (Fixed Price)",
+            "Exclusions / Out of Scope":"Email marketing platform setup excluded.",
+            "Payment Terms":"Net 15, 3 milestones.",
+            "Change Request Process":"§4 — Change Request required over $1,000.",
+            "Notice Period":"§4.1 — 5-day notice of scope change.",
+            "Relevant Terms":"§6 Client-directed rework billable at standard rate."
+        }},
+        docs:[{id:"d20", name:"Final_QA_Notes.docx", type:"doc", date:"2025-12-01", size:"30 KB"}],
+        opportunities:[
+          {id:"o10", type:"Completed, Unbilled", title:"Extra Landing Page — Donor Campaign",
+            desc:"An extra campaign landing page was added late in the project at the client's request.",
+            estCost:900, billable:2100, confidence:0.7, status:"detected",
+            clause:"§4 — Change Request required over $1,000",
+            evidence:[{text:"QA notes reference the added campaign landing page.", src:"Final_QA_Notes.docx"}],
+            timeline:[{date:"Nov 28, 2025", desc:"Extra landing page logged during final QA."}]}
+        ],
+        invoices:[{id:"i10", number:"Milestone 2", date:"2025-11-15", amount:11333, related:"—", collected:11333}]
+      }
+    ]
+  };
+}
+function loadState(){
+  try{ const raw = localStorage.getItem(STORE_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return seedData();
+}
+function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+let state = loadState();
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+const fmtShort = n => { if(Math.abs(n)>=1000000) return "$"+(n/1000000).toFixed(2)+"M"; if(Math.abs(n)>=1000) return "$"+(n/1000).toFixed(0)+"K"; return fmt(n); };
+function getProject(id){ return state.projects.find(p=>p.id===id); }
+function activeProject(){ return getProject(state.activeProjectId); }
+function allOpportunities(){ return state.projects.flatMap(p=>p.opportunities.map(o=>({...o, projectId:p.id, projectName:p.name}))); }
+
+const STATUS_LABELS = { detected:"Detected", review:"Review", confirmed:"Confirmed", rejected:"Rejected", "change-order":"Change Request", approved:"Approved", invoiced:"Invoiced", paid:"Paid" };
+const STATUS_ORDER = ["detected","review","confirmed","change-order","approved","invoiced","paid"];
+function statusStamp(status){ return `<span class="stamp ${status}">${STATUS_LABELS[status]||status}</span>`; }
+
+/* ============================================================
+   ROUTER / VIEW STATE
+   ============================================================ */
+let view = "dashboard";
+let subState = {};
+const NAV = [
+  {section:"Overview", items:[{id:"dashboard", label:"Revenue Dashboard", num:"05"}]},
+  {section:"Setup", items:[
+    {id:"projects", label:"Workspace & Projects", num:"01"},
+    {id:"contract", label:"Scope of Work", num:"02"},
+    {id:"projectdata", label:"Project Activity", num:"03"},
+  ]},
+  {section:"Recovery Workflow", items:[
+    {id:"opportunities", label:"Scope Opportunities", num:"04"},
+    {id:"changeorders", label:"Change Requests", num:"05"},
+    {id:"invoicing", label:"Invoice Tracking", num:"06"},
+  ]},
+  {section:"Ask", items:[{id:"assistant", label:"AI Assistant", num:"07"}]},
+];
+function navigate(v, sub){ view = v; subState = sub || {}; render(); window.scrollTo(0,0); }
+
+/* ============================================================
+   TOP-LEVEL RENDER SWITCH: auth -> onboarding -> app
+   ============================================================ */
+function render(){
+  const app = document.getElementById("app");
+  if(!session.loggedIn){ app.innerHTML = renderAuth(); attachAuthHandlers(); return; }
+  if(!session.onboarded){ app.innerHTML = renderOnboarding(); attachOnboardingHandlers(); return; }
+  app.innerHTML = `
+    ${renderSidebar()}
+    <div class="main">${renderTitleBlock()}<div class="content">${renderView()}</div></div>
+    ${renderModal()}
+  `;
+  attachGlobalHandlers();
+}
+
+/* ============================================================
+   AUTH SCREEN
+   ============================================================ */
+function renderAuth(){
+  const mode = session.authMode || "login";
+  return `
+  <div class="auth-shell">
+    <div class="auth-side">
+      <div class="inner">
+        <div class="mark"><div class="swatch"></div><h1>SCOPELINE</h1></div>
+        <div class="pitch">Stop losing revenue to <b>scope that was never billed</b>.</div>
+        <div class="sub">Scopeline compares what your team actually delivered against the signed SOW, flags unbilled work with evidence, and turns it into a change request in one click.</div>
+        <div class="stat-row">
+          <div class="stat"><div class="v">$47K</div><div class="l">Avg. recovered / quarter</div></div>
+          <div class="stat"><div class="v">6.2%</div><div class="l">Typical unbilled scope</div></div>
+          <div class="stat"><div class="v">9 min</div><div class="l">To first flagged item</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="auth-card">
+        <div class="auth-toggle">
+          <button data-authmode="login" class="${mode==='login'?'active':''}">Log In</button>
+          <button data-authmode="signup" class="${mode==='signup'?'active':''}">Create Account</button>
+        </div>
+        ${mode==='login' ? `
+          <h2>Welcome back</h2>
+          <div class="sub">Log in to your workspace.</div>
+        ` : `
+          <h2>Create your workspace</h2>
+          <div class="sub">Set up Scopeline for your team in under a minute.</div>
+        `}
+        <div class="field"><label class="field-label">Work Email</label><input type="email" id="authEmail" placeholder="you@company.com" value="${session.email||''}"/></div>
+        <div class="field"><label class="field-label">Password</label><input type="password" id="authPassword" placeholder="••••••••"/></div>
+        <button class="btn orange wide" data-action="auth-submit">${mode==='login'?'Log In':'Create Account'}</button>
+        <div class="auth-divider">or continue with</div>
+        <div class="auth-sso">
+          <button data-action="auth-submit">Continue with Google</button>
+          <button data-action="auth-submit">Continue with Microsoft</button>
+        </div>
+        <div class="auth-foot">
+          ${mode==='login' ? `New to Scopeline? <button data-authmode="signup">Create an account</button>` : `Already have an account? <button data-authmode="login">Log in</button>`}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function attachAuthHandlers(){
+  document.querySelectorAll("[data-authmode]").forEach(el=>{
+    el.addEventListener("click", ()=>{ session.authMode = el.dataset.authmode; saveSession(); render(); });
+  });
+  document.querySelectorAll('[data-action="auth-submit"]').forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const emailEl = document.getElementById("authEmail");
+      session.email = (emailEl && emailEl.value.trim()) || "you@company.com";
+      session.loggedIn = true;
+      saveSession();
+      render();
+    });
+  });
+}
+
+/* ============================================================
+   ONBOARDING WIZARD
+   ============================================================ */
+const ONB_TOTAL_STEPS = 5;
+function renderOnboarding(){
+  const step = session.onbStep || 0;
+  const d = session.onbData;
+  let body = "";
+
+  if(step===0){
+    body = `
+      <div class="step-tag">Step 1 of ${ONB_TOTAL_STEPS} — Your workspace</div>
+      <h2>Let's set up your workspace</h2>
+      <div class="sub">This is the account your whole team will work in.</div>
+      <div class="field"><label class="field-label">Your Name</label><input type="text" id="onbName" placeholder="Jamie Rivera" value="${d.name}"/></div>
+      <div class="field"><label class="field-label">Company / Agency Name</label><input type="text" id="onbCompany" placeholder="Nimbus Digital" value="${d.company}"/></div>
+      <div class="field">
+        <label class="field-label">Which best describes you?</label>
+        <div class="role-pick">
+          <div class="opt ${d.role==='pm'?'selected':''}" data-role="pm"><div class="t">Project Manager</div><div class="d">I run delivery on client projects day to day.</div></div>
+          <div class="opt ${d.role==='founder'?'selected':''}" data-role="founder"><div class="t">Founder / Owner</div><div class="d">I oversee multiple projects and watch the numbers.</div></div>
+        </div>
+      </div>
+    `;
+  } else if(step===1){
+    body = `
+      <div class="step-tag">Step 2 of ${ONB_TOTAL_STEPS} — First project</div>
+      <h2>Add your first project</h2>
+      <div class="sub">You can add more projects later — let's start with one you're currently running.</div>
+      <div class="field"><label class="field-label">Project Name</label><input type="text" id="onbProject" placeholder="Acme Corp — Website Rebuild" value="${d.projectName}"/></div>
+      <div class="field"><label class="field-label">Client Name</label><input type="text" id="onbClient" placeholder="Acme Corp" value="${d.client}"/></div>
+      <div class="field"><label class="field-label">Agreed Scope Value</label><input type="number" id="onbValue" placeholder="45000" value="${d.value}"/></div>
+    `;
+  } else if(step===2){
+    body = `
+      <div class="step-tag">Step 3 of ${ONB_TOTAL_STEPS} — Scope of work</div>
+      <h2>Upload your contract or SOW</h2>
+      <div class="sub">We'll extract the scope, price, and change-request terms automatically. You can skip this and add it later.</div>
+      <div class="upload-zone" data-action="onb-mock-upload">
+        <h4>Drop your SOW / contract here</h4>
+        <p>PDF or DOCX</p>
+        <div style="margin-top:14px;"><button class="btn small">Choose File (demo)</button></div>
+      </div>
+      ${d.contractUploaded ? `<div class="doc-row" style="margin-top:14px;"><span class="ext pdf">PDF</span><span class="name">${d.contractName}</span><span class="meta">Extraction complete</span></div>` : ""}
+    `;
+  } else if(step===3){
+    const sources = [
+      {id:"email", label:"Email (Gmail / Outlook)"},
+      {id:"slack", label:"Slack"},
+      {id:"jira", label:"Jira / Linear"},
+      {id:"files", label:"File Upload"},
+    ];
+    body = `
+      <div class="step-tag">Step 4 of ${ONB_TOTAL_STEPS} — Project activity</div>
+      <h2>Where does your project activity live?</h2>
+      <div class="sub">Pick what you'd like to connect. All of these can be added or changed later — file upload always works.</div>
+      <div class="source-grid">
+        ${sources.map(s=>`<div class="src ${d.sources.includes(s.id)?'selected':''}" data-source="${s.id}"><span>${s.label}</span><span class="chk"></span></div>`).join("")}
+      </div>
+    `;
+  } else if(step===4){
+    body = `
+      <div class="onb-done">
+        <div class="big-check">✓</div>
+        <h2 style="text-align:center;">You're all set, ${d.name ? d.name.split(' ')[0] : 'there'}</h2>
+        <div class="sub" style="text-align:center;">${d.projectName || 'Your first project'} is ready. Scopeline is already watching for scope that doesn't match your agreed terms.</div>
+      </div>
+    `;
+  }
+
+  const steps = Array.from({length: ONB_TOTAL_STEPS}, (_,i)=> i < step ? "done" : (i===step ? "current" : ""));
+
+  return `
+  <div class="onb-shell">
+    <div class="onb-header"><div class="swatch"></div><div class="name">Scopeline</div></div>
+    <div class="onb-steps">${steps.map(s=>`<div class="seg ${s}"></div>`).join("")}</div>
+    <div class="onb-card">
+      ${body}
+      <div class="onb-actions">
+        <button class="btn ghost small" data-action="onb-back" ${step===0?'disabled':''}>Back</button>
+        <div style="display:flex;gap:10px;">
+          ${step<4 && step>=2 ? `<button class="btn ghost small" data-action="onb-skip">Skip for now</button>` : ""}
+          <button class="btn orange" data-action="${step===4?'onb-finish':'onb-next'}">${step===4?'Enter Dashboard':'Continue'}</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachOnboardingHandlers(){
+  const d = session.onbData;
+  document.querySelectorAll("[data-role]").forEach(el=>{
+    el.addEventListener("click", ()=>{ d.role = el.dataset.role; saveSession(); render(); });
+  });
+  document.querySelectorAll("[data-source]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const s = el.dataset.source;
+      d.sources = d.sources.includes(s) ? d.sources.filter(x=>x!==s) : [...d.sources, s];
+      saveSession(); render();
+    });
+  });
+  bindAction("onb-mock-upload", ()=>{
+    d.contractUploaded = true; d.contractName = "Uploaded_SOW.pdf"; saveSession(); render();
+  });
+  bindAction("onb-back", ()=>{ session.onbStep = Math.max(0, session.onbStep-1); saveSession(); render(); });
+  bindAction("onb-skip", ()=>{ session.onbStep = session.onbStep+1; saveSession(); render(); });
+  bindAction("onb-next", ()=>{
+    // capture inputs before advancing
+    const nameEl=document.getElementById("onbName"), companyEl=document.getElementById("onbCompany");
+    const projEl=document.getElementById("onbProject"), clientEl=document.getElementById("onbClient"), valEl=document.getElementById("onbValue");
+    if(nameEl) d.name = nameEl.value;
+    if(companyEl) d.company = companyEl.value;
+    if(projEl) d.projectName = projEl.value;
+    if(clientEl) d.client = clientEl.value;
+    if(valEl) d.value = valEl.value;
+    session.onbStep = Math.min(ONB_TOTAL_STEPS-1, session.onbStep+1);
+    saveSession(); render();
+  });
+  bindAction("onb-finish", ()=>{
+    // apply onboarding data onto the workspace
+    if(d.company) state.company.name = d.company;
+    if(d.projectName){
+      const id = "p"+Date.now();
+      state.projects.unshift({
+        id, name: d.projectName, client: d.client || "—", value: Number(d.value)||0, currency:"USD",
+        start: new Date().toISOString().slice(0,10), end:"", status:"Active",
+        contract: d.contractUploaded ? {fileName:d.contractName, uploaded:true, extracted:{
+          "Original Scope":"Extraction pending review of the uploaded document.",
+          "Contract Value": fmt(Number(d.value)||0),
+          "Change Request Process":"Sample extraction — confirm against your actual SOW.",
+        }} : {fileName:"", uploaded:false, extracted:null},
+        docs:[], opportunities:[], invoices:[]
+      });
+      state.activeProjectId = id;
+      saveState();
+    }
+    session.onboarded = true;
+    saveSession();
+    render();
+  });
+}
+
+/* ============================================================
+   RENDER: SHELL (main app)
+   ============================================================ */
+function renderSidebar(){
+  const d = session.onbData;
+  return `
+  <div class="sidebar">
+    <div class="brand">
+      <div class="mark"><div class="swatch"></div><h1>SCOPELINE</h1></div>
+      <div class="tag">Scope &amp; Revenue Recovery</div>
+    </div>
+    <nav class="nav">
+      ${NAV.map(sec => `
+        <div class="group-label">${sec.section}</div>
+        ${sec.items.map(it => `<button class="nav-item ${view===it.id?'active':''}" data-nav="${it.id}"><span class="num">${it.num}</span>${it.label}</button>`).join("")}
+      `).join("")}
+    </nav>
+    <div class="sidebar-foot">
+      <div class="co">${state.company.name}</div>
+      <div>${state.company.plan}</div>
+      <div class="who"><span>${d.name || session.email || "You"}</span><button class="logout" data-action="logout">Log out</button></div>
+    </div>
+  </div>`;
+}
+
+function renderTitleBlock(){
+  const p = activeProject();
+  const titles = {
+    dashboard:["Revenue Dashboard","Portfolio-wide leakage, recovery and collection status"],
+    projects:["Workspace & Projects","Every project belongs here before any data or analysis"],
+    contract:["Scope of Work","Structured terms extracted from the signed SOW / contract"],
+    projectdata:["Project Activity","Ingested delivery, financial and correspondence records"],
+    opportunities:["Scope Opportunities","Detected out-of-scope or unbilled work awaiting review"],
+    changeorders:["Change Requests","Draft, submitted and approved scope-change documents"],
+    invoicing:["Invoice Tracking","Approved value reconciled against what's actually been billed"],
+    assistant:["AI Assistant","Ask about scope, evidence, exposure and billing status"],
+  };
+  const [h, sub] = titles[view];
+  return `
+  <div class="titleblock">
+    <div><h2>${h}</h2><div class="sub">${sub}</div></div>
+    <div class="meta">
+      <div><div>Project</div><div>${p ? p.name : "—"}</div></div>
+      <div><div>Client</div><div>${p ? p.client : "—"}</div></div>
+      <div><div>Scope Value</div><div>${p ? fmt(p.value) : "—"}</div></div>
+      <div><div>Sheet</div><div>REV. LIVE · ${new Date().toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'})}</div></div>
+    </div>
+  </div>`;
+}
+
+function renderView(){
+  switch(view){
+    case "dashboard": return viewDashboard();
+    case "projects": return viewProjects();
+    case "contract": return viewContract();
+    case "projectdata": return viewProjectData();
+    case "opportunities": return viewOpportunities();
+    case "changeorders": return viewChangeOrders();
+    case "invoicing": return viewInvoicing();
+    case "assistant": return viewAssistant();
+    default: return "";
+  }
+}
+
+/* ============================================================
+   VIEW: DASHBOARD
+   ============================================================ */
+function viewDashboard(){
+  const opps = allOpportunities();
+  const sum = s => opps.filter(o=>s.includes(o.status)).reduce((a,o)=>a+o.billable,0);
+  const potential = sum(STATUS_ORDER);
+  const underReview = sum(["detected","review"]);
+  const confirmed = sum(["confirmed"]);
+  const changeOrder = sum(["change-order"]);
+  const approved = sum(["approved"]);
+  const invoiced = sum(["invoiced"]);
+  const paid = sum(["paid"]);
+  const atRisk = opps.filter(o=>["approved"].includes(o.status) && (o.invoiced||0) < o.billable).reduce((a,o)=>a+(o.billable-(o.invoiced||0)),0);
+
+  const funnelSegs = [
+    {label:"Detected / Review", val:underReview, color:"var(--steel)"},
+    {label:"Confirmed", val:confirmed, color:"var(--navy)"},
+    {label:"Change Request", val:changeOrder, color:"#7A4FB5"},
+    {label:"Approved", val:approved, color:"var(--amber)"},
+    {label:"Invoiced", val:invoiced, color:"#1D6E96"},
+    {label:"Paid", val:paid, color:"var(--green)"},
+  ];
+  const funnelTotal = funnelSegs.reduce((a,s)=>a+s.val,0) || 1;
+  const byProject = state.projects.map(p=>{
+    const t = p.opportunities.reduce((a,o)=>a+o.billable,0);
+    const risk = p.opportunities.filter(o=>o.status==="approved").reduce((a,o)=>a+(o.billable-(o.invoiced||0)),0);
+    return {...p, oppTotal:t, risk};
+  });
+
+  return `
+  <section class="block">
+    <div class="grid cols-4">
+      <div class="kpi" style="--kpi-accent:var(--steel)"><div class="label">Total Potential Revenue</div><div class="value">${fmtShort(potential)}</div><div class="delta up">${opps.length} opportunities across ${state.projects.length} projects</div></div>
+      <div class="kpi" style="--kpi-accent:var(--amber)"><div class="label">Revenue Under Review</div><div class="value">${fmtShort(underReview)}</div><div class="delta">${opps.filter(o=>["detected","review"].includes(o.status)).length} awaiting decision</div></div>
+      <div class="kpi" style="--kpi-accent:var(--orange)"><div class="label">Revenue At Risk (Unbilled)</div><div class="value">${fmtShort(atRisk)}</div><div class="delta down">Approved but not yet invoiced</div></div>
+      <div class="kpi" style="--kpi-accent:var(--green)"><div class="label">Collected To Date</div><div class="value">${fmtShort(paid)}</div><div class="delta up">From recovered opportunities</div></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h3>Recovery Funnel</h3><div class="hint">detected → review → confirmed → change request → approved → invoiced → paid</div></div>
+    <div class="card">
+      <div class="progress-track" style="height:14px;margin-bottom:14px;">
+        ${funnelSegs.map(s=>`<div class="seg" style="width:${(s.val/funnelTotal*100).toFixed(1)}%;background:${s.color}" title="${s.label}: ${fmt(s.val)}"></div>`).join("")}
+      </div>
+      <div class="grid cols-4" style="gap:10px;">
+        ${funnelSegs.map(s=>`<div style="font-size:12px;"><span class="badge-dot" style="background:${s.color}"></span>${s.label}<div class="mono" style="font-weight:600;color:var(--navy);margin-top:2px;">${fmt(s.val)}</div></div>`).join("")}
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h3>By Project — drill in for evidence</h3></div>
+    <div class="grid cols-3">
+      ${byProject.map(p=>`
+        <div class="project-card" data-goto-project="${p.id}">
+          ${p.risk>0?`<div class="flag">${fmt(p.risk)} AT RISK</div>`:""}
+          <div class="pc-top"><div><h4>${p.name}</h4><div class="client">${p.client}</div></div></div>
+          <div class="row"><span>Potential Revenue Found</span><span class="v">${fmt(p.oppTotal)}</span></div>
+          <div class="row"><span>Open Opportunities</span><span class="v">${p.opportunities.filter(o=>!['paid','rejected'].includes(o.status)).length}</span></div>
+        </div>
+      `).join("")}
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h3>Rejected / Dismissed (audit trail)</h3></div>
+    <div class="card">
+      <table>
+        <tr><th>Opportunity</th><th>Type</th><th class="num-cell">Billable Value</th><th>Reason on file</th></tr>
+        ${opps.filter(o=>o.status==="rejected").map(o=>`<tr><td>${o.title}</td><td><span class="tag-type">${o.type}</span></td><td class="num-cell">${fmt(o.billable)}</td><td style="color:var(--steel);font-size:12px;">Determined vendor-side error, not billable</td></tr>`).join("") || `<tr><td colspan="4" style="color:var(--steel);">Nothing dismissed yet.</td></tr>`}
+      </table>
+    </div>
+  </section>
+  `;
+}
+
+/* ============================================================
+   VIEW: PROJECTS
+   ============================================================ */
+function viewProjects(){
+  return `
+  <section class="block">
+    <div class="block-head"><h3>Workspace</h3></div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-weight:700;color:var(--navy);font-size:16px;">${state.company.name}</div>
+        <div style="font-size:12px;color:var(--steel);margin-top:2px;">${state.projects.length} projects · ${state.company.plan}</div>
+      </div>
+      <button class="btn ghost small" data-action="edit-company">Rename Workspace</button>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h3>Projects</h3><button class="btn orange small" data-action="new-project">+ New Project</button></div>
+    <div class="grid cols-3">
+      ${state.projects.map(p=>{
+        const oppTotal = p.opportunities.reduce((a,o)=>a+o.billable,0);
+        return `
+        <div class="project-card" data-goto-project="${p.id}">
+          <div class="pc-top"><div><h4>${p.name}</h4><div class="client">${p.client}</div></div><span class="tag-type">${p.status}</span></div>
+          <div class="row"><span>Scope Value</span><span class="v">${fmt(p.value)}</span></div>
+          <div class="row"><span>Dates</span><span class="v">${p.start} → ${p.end || 'TBD'}</span></div>
+          <div class="row"><span>Revenue Found</span><span class="v" style="color:${oppTotal>0?'var(--orange)':'var(--steel)'}">${oppTotal>0?fmt(oppTotal):'—'}</span></div>
+        </div>`;
+      }).join("")}
+    </div>
+  </section>
+  `;
+}
+
+/* ============================================================
+   VIEW: CONTRACT / SOW
+   ============================================================ */
+function viewContract(){
+  const p = activeProject();
+  if(!p.contract.uploaded){
+    return `
+    <section class="block">
+      <div class="upload-zone" data-action="mock-upload-contract" style="max-width:560px;">
+        <h4>Upload the signed SOW or contract</h4>
+        <p>PDF or DOCX. The AI extracts scope, price, exclusions, payment terms and change-request rules automatically.</p>
+        <div style="margin-top:14px;"><button class="btn small">Choose File (demo)</button></div>
+      </div>
+    </section>`;
+  }
+  const ext = p.contract.extracted;
+  return `
+  <section class="block">
+    <div class="block-head"><h3>Source Document</h3></div>
+    <div class="doc-row"><span class="ext pdf">PDF</span><span class="name">${p.contract.fileName}</span><span class="meta">Extraction complete</span><button class="btn ghost small" data-action="reupload-contract">Replace</button></div>
+  </section>
+  <section class="block">
+    <div class="block-head"><h3>AI-Extracted Structured Terms</h3><div class="hint">stored as project information · used by opportunity detection</div></div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="clause-grid">${Object.entries(ext).map(([k,v])=>`<div class="k">${k}</div><div class="v">${v}</div>`).join("")}</div>
+    </div>
+  </section>
+  `;
+}
+
+/* ============================================================
+   VIEW: PROJECT ACTIVITY
+   ============================================================ */
+function viewProjectData(){
+  const p = activeProject();
+  const iconClass = t => ({pdf:"pdf",xls:"xls",doc:"doc",img:"img",eml:"eml",chat:"chat",tkt:"tkt"}[t]||"doc");
+  return `
+  <section class="block">
+    <div class="upload-zone" data-action="mock-upload-doc">
+      <h4>Import project activity</h4>
+      <p>Drag files here, or connect a source — Slack exports, Jira/Linear tickets, emails, meeting notes, invoices.</p>
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;">
+        <button class="btn small">Upload Files (demo)</button>
+        <button class="btn ghost small">Connect Source</button>
+      </div>
+    </div>
+  </section>
+  <section class="block">
+    <div class="block-head"><h3>Ingested Activity (${p.docs.length})</h3><button class="btn ghost small" data-action="run-analysis">Run AI Analysis →</button></div>
+    ${p.docs.length ? p.docs.map(d=>`<div class="doc-row"><span class="ext ${iconClass(d.type)}">${d.type.toUpperCase()}</span><span class="name">${d.name}</span><span class="meta">${d.date} · ${d.size}</span></div>`).join("") : `<div class="empty"><h4>No project activity yet</h4>Upload tickets, chat exports, invoices or emails to begin analysis.</div>`}
+  </section>
+  ${p.docs.length ? `
+  <section class="block">
+    <div class="block-head"><h3>Extracted Events</h3><div class="hint">events, costs, instructions and dates pulled from the activity above</div></div>
+    <div class="timeline">${p.opportunities.flatMap(o=>o.timeline.map(t=>({...t,type:o.type}))).map(t=>`<div class="t-item"><div class="date">${t.date}</div><div class="desc">${t.desc} <span class="tag-type">${t.type}</span></div></div>`).join("")}</div>
+  </section>` : ""}
+  `;
+}
+
+/* ============================================================
+   VIEW: OPPORTUNITIES
+   ============================================================ */
+function viewOpportunities(){
+  const p = activeProject();
+  const filter = subState.filter || "all";
+  const filters = ["all", ...STATUS_ORDER, "rejected"];
+  let list = p.opportunities;
+  if(filter !== "all") list = list.filter(o=>o.status===filter);
+  const totalShown = list.reduce((a,o)=>a+o.billable,0);
+
+  return `
+  <section class="block">
+    <div class="pill-tabs">${filters.map(f=>`<button class="${filter===f?'active':''}" data-filter="${f}">${f==='all'?'All':STATUS_LABELS[f]||f} ${f!=='all'?`(${p.opportunities.filter(o=>o.status===f).length})`:`(${p.opportunities.length})`}</button>`).join("")}</div>
+    <div class="hint" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--steel);margin-bottom:14px;">Showing ${list.length} opportunities · ${fmt(totalShown)} billable value</div>
+    ${list.length ? list.map(o=>renderOppCard(o)).join("") : `<div class="empty"><h4>No opportunities in this status</h4>Run AI analysis from Project Activity to detect more.</div>`}
+  </section>
+  `;
+}
+function renderOppCard(o){
+  return `
+  <div class="opp-card">
+    <div class="oc-top">
+      <div><span class="tag-type">${o.type}</span><h4 style="margin-top:6px;">${o.title}</h4><div class="desc">${o.desc}</div></div>
+      ${statusStamp(o.status)}
+    </div>
+    <div class="figures">
+      <div><div class="l">Estimated Cost</div><div class="v">${fmt(o.estCost)}</div></div>
+      <div><div class="l">Potential Billable</div><div class="v" style="color:var(--orange)">${fmt(o.billable)}</div></div>
+      <div><div class="l">Confidence</div><div class="v"><span class="confidence-bar"><span style="width:${o.confidence*100}%"></span></span>${Math.round(o.confidence*100)}%</div></div>
+      <div><div class="l">SOW Reference</div><div class="v mono" style="font-size:11.5px;font-weight:500;">${o.clause.split('—')[0].trim()}</div></div>
+    </div>
+    <div class="foot">
+      <button class="btn ghost small" data-action="view-opp" data-id="${o.id}">View Evidence &amp; Timeline</button>
+      <div style="display:flex;gap:8px;">
+        ${o.status==="detected"||o.status==="review" ? `<button class="btn ghost small" data-action="reject-opp" data-id="${o.id}">Reject</button><button class="btn orange small" data-action="confirm-opp" data-id="${o.id}">Confirm</button>` : ""}
+        ${o.status==="confirmed" ? `<button class="btn orange small" data-action="generate-co" data-id="${o.id}">Generate Change Request →</button>` : ""}
+        ${o.status==="approved" ? `<button class="btn ghost small" data-action="goto-invoicing">View in Invoice Tracking →</button>` : ""}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   VIEW: CHANGE REQUESTS
+   ============================================================ */
+function viewChangeOrders(){
+  const p = activeProject();
+  const withCO = p.opportunities.filter(o=>o.changeOrder);
+  const readyToGenerate = p.opportunities.filter(o=>o.status==="confirmed");
+  return `
+  ${readyToGenerate.length ? `
+  <section class="block">
+    <div class="block-head"><h3>Ready To Draft</h3><div class="hint">confirmed opportunities without a change request yet</div></div>
+    ${readyToGenerate.map(o=>`
+      <div class="opp-card">
+        <div class="oc-top"><div><span class="tag-type">${o.type}</span><h4 style="margin-top:6px;">${o.title}</h4><div class="desc">${o.desc}</div></div>${statusStamp(o.status)}</div>
+        <div class="foot" style="border-top:none;padding-top:8px;justify-content:flex-end;"><button class="btn orange small" data-action="generate-co" data-id="${o.id}">Generate Draft Change Request →</button></div>
+      </div>
+    `).join("")}
+  </section>` : ""}
+  <section class="block">
+    <div class="block-head"><h3>Change Requests on File</h3></div>
+    ${withCO.length ? withCO.map(o=>`
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div><div class="mono" style="font-size:11px;color:var(--steel);letter-spacing:0.05em;">${o.changeOrder.number}</div><h4 style="font-family:'IBM Plex Sans';text-transform:none;letter-spacing:0;font-size:15px;color:var(--navy);margin-top:3px;">${o.title}</h4></div>
+          <span class="stamp ${o.changeOrder.status==='approved'?'approved':'change-order'}">${o.changeOrder.status}</span>
+        </div>
+        <div class="grid cols-4" style="margin-top:14px;">
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">Reason</div><div style="font-size:12.5px;margin-top:3px;">${o.type}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">SOW Reference</div><div style="font-size:12.5px;margin-top:3px;">${o.clause.split('—')[0].trim()}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">Submitted</div><div class="mono" style="font-size:12.5px;margin-top:3px;">${o.changeOrder.submitted}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">Proposed Value</div><div class="mono" style="font-size:13px;font-weight:600;color:var(--orange);margin-top:3px;">${fmt(o.billable)}</div></div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--paper-2);display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn ghost small" data-action="view-opp" data-id="${o.id}">View Supporting Evidence</button>
+          <button class="btn ghost small" data-action="export-co" data-id="${o.id}">Export (demo)</button>
+        </div>
+      </div>
+    `).join("") : `<div class="empty"><h4>No change requests yet</h4>Confirm an opportunity to draft one.</div>`}
+  </section>
+  `;
+}
+
+/* ============================================================
+   VIEW: INVOICING
+   ============================================================ */
+function viewInvoicing(){
+  const p = activeProject();
+  const approvedOpps = p.opportunities.filter(o=>["approved","invoiced","paid"].includes(o.status));
+  const unbilledTotal = approvedOpps.reduce((a,o)=> a + Math.max(0,(o.billable - (o.invoiced||0))), 0);
+  return `
+  <section class="block">
+    <div class="grid cols-3">
+      <div class="kpi" style="--kpi-accent:var(--amber)"><div class="label">Approved Value</div><div class="value">${fmtShort(approvedOpps.reduce((a,o)=>a+o.billable,0))}</div></div>
+      <div class="kpi" style="--kpi-accent:#1D6E96"><div class="label">Invoiced Value</div><div class="value">${fmtShort(approvedOpps.reduce((a,o)=>a+(o.invoiced||0),0))}</div></div>
+      <div class="kpi" style="--kpi-accent:var(--orange)"><div class="label">Potentially Unbilled</div><div class="value">${fmtShort(unbilledTotal)}</div></div>
+    </div>
+  </section>
+  <section class="block">
+    <div class="block-head"><h3>Approved vs. Invoiced — by opportunity</h3></div>
+    <div class="card">
+      <table>
+        <tr><th>Opportunity</th><th>Change Request</th><th class="num-cell">Approved</th><th class="num-cell">Invoiced</th><th class="num-cell">Gap</th><th>Flag</th></tr>
+        ${approvedOpps.map(o=>{ const invoicedVal=o.invoiced||0, gap=o.billable-invoicedVal; return `<tr><td>${o.title}</td><td class="mono" style="font-size:12px;">${o.changeOrder?o.changeOrder.number:'—'}</td><td class="num-cell">${fmt(o.billable)}</td><td class="num-cell">${fmt(invoicedVal)}</td><td class="num-cell" style="color:${gap>0?'var(--orange)':'var(--green)'};font-weight:600;">${fmt(gap)}</td><td>${gap>0?`<span class="stamp unbilled">Unbilled</span>`:`<span class="stamp paid">Clear</span>`}</td></tr>`; }).join("") || `<tr><td colspan="6" style="color:var(--steel);">No approved opportunities yet.</td></tr>`}
+      </table>
+    </div>
+  </section>
+  <section class="block">
+    <div class="block-head"><h3>Invoices / Milestones on File</h3></div>
+    <div class="card">
+      <table>
+        <tr><th>Invoice</th><th>Date</th><th>Linked Change Request</th><th class="num-cell">Amount</th><th class="num-cell">Collected</th></tr>
+        ${p.invoices.map(i=>`<tr><td>${i.number}</td><td class="mono" style="font-size:12px;">${i.date}</td><td>${i.related}</td><td class="num-cell">${fmt(i.amount)}</td><td class="num-cell" style="color:${i.collected>0?'var(--green)':'var(--steel)'}">${i.collected>0?fmt(i.collected):'Outstanding'}</td></tr>`).join("") || `<tr><td colspan="5" style="color:var(--steel);">No invoices recorded.</td></tr>`}
+      </table>
+    </div>
+  </section>
+  `;
+}
+
+/* ============================================================
+   VIEW: AI ASSISTANT
+   ============================================================ */
+const ASSIST_QUESTIONS = [
+  "Show all potential unbilled work.",
+  "Why was this change detected?",
+  "Which projects have revenue at risk?",
+  "Show approved changes that haven't been invoiced.",
+  "What SOW clause applies to this opportunity?",
+];
+let chatLog = null;
+function initChat(){
+  if(chatLog) return;
+  chatLog = [{role:"ai", text:`I'm ready to answer questions about ${activeProject().name} using the uploaded SOW and project activity. Try a suggestion below, or ask your own.`}];
+}
+function answerQuestion(q){
+  const p = activeProject(); const opps = p.opportunities; const lower = q.toLowerCase();
+  if(lower.includes("unbilled")){
+    const rows = opps.filter(o=>o.status==="approved" && (o.billable-(o.invoiced||0))>0);
+    if(!rows.length) return {text:"No approved opportunities currently show a gap between approved and invoiced value on this project.", ev:null};
+    return {text:`Found ${rows.length} item(s) with approved value not yet invoiced, totaling ${fmt(rows.reduce((a,o)=>a+(o.billable-(o.invoiced||0)),0))}:\n` + rows.map(o=>`• ${o.title} — ${fmt(o.billable-(o.invoiced||0))} outstanding`).join("\n"), ev: rows.map(o=>o.changeOrder?.number || o.title).join(", ")};
+  }
+  if(lower.includes("why") && lower.includes("detect")){
+    const o = opps[0];
+    return {text:`Take "${o.title}" as an example: it was flagged because project activity describes work outside the original scope, tied to a specific SOW clause (${o.clause}). Confidence is ${Math.round(o.confidence*100)}% based on how directly the source records support it.`, ev: o.evidence.map(e=>e.src).join(", ")};
+  }
+  if(lower.includes("at risk")){
+    const byProject = state.projects.map(pr=>({name:pr.name, risk: pr.opportunities.filter(o=>o.status==="approved").reduce((a,o)=>a+(o.billable-(o.invoiced||0)),0)})).filter(x=>x.risk>0);
+    if(!byProject.length) return {text:"No projects currently show approved-but-unbilled exposure.", ev:null};
+    return {text: byProject.map(x=>`• ${x.name}: ${fmt(x.risk)} at risk`).join("\n"), ev:"Aggregated from Invoice Tracking across all projects"};
+  }
+  if(lower.includes("approved") && lower.includes("invoice")){
+    const rows = opps.filter(o=>o.status==="approved");
+    return {text: rows.length ? rows.map(o=>`• ${o.title} (${o.changeOrder?.number || '—'}) — approved ${fmt(o.billable)}, invoiced ${fmt(o.invoiced||0)}`).join("\n") : "No approved-but-not-fully-invoiced items right now.", ev: rows.map(o=>o.changeOrder?.number).join(", ")};
+  }
+  if(lower.includes("clause") || lower.includes("sow")){
+    const o = opps.find(o=>o.status!=="rejected") || opps[0];
+    return {text:`"${o.title}" maps to ${o.clause}.`, ev:o.clause};
+  }
+  return {text:`Based on the uploaded SOW and project activity for ${p.name}, I don't have a direct match yet — try asking about unbilled work, revenue at risk, a specific opportunity's evidence, or applicable SOW clauses.`, ev:null};
+}
+function viewAssistant(){
+  initChat();
+  return `
+  <div class="chat-window">
+    <div class="chat-log" id="chatlog">
+      ${chatLog.map(m=>`<div class="msg ${m.role}">${m.text.split("\n").map(l=>`<div>${l}</div>`).join("")}${m.ev?`<div class="ev">SOURCE: ${m.ev}</div>`:""}</div>`).join("")}
+    </div>
+    <div class="chat-suggest">${ASSIST_QUESTIONS.map(q=>`<button data-ask="${encodeURIComponent(q)}">${q}</button>`).join("")}</div>
+    <div class="chat-input-row"><input type="text" id="chatInput" placeholder="Ask about scope, evidence, exposure or billing status…" /><button class="btn" data-action="send-chat">Ask</button></div>
+  </div>`;
+}
+
+/* ============================================================
+   MODAL: OPPORTUNITY DETAIL
+   ============================================================ */
+function renderModal(){
+  if(!subState.modalOppId) return "";
+  const p = activeProject();
+  const o = p.opportunities.find(o=>o.id===subState.modalOppId);
+  if(!o) return "";
+  return `
+  <div class="modal-backdrop open" data-action="close-modal">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head"><div><div class="hint" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--steel);">${o.type}</div><h3>${o.title}</h3></div><button data-action="close-modal">&times;</button></div>
+      <div class="modal-body">
+        <p style="font-size:13.5px;color:var(--steel);">${o.desc}</p>
+        <div class="grid cols-3" style="margin:16px 0;">
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">Est. Cost</div><div class="mono" style="font-weight:600;">${fmt(o.estCost)}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">Billable Value</div><div class="mono" style="font-weight:600;color:var(--orange);">${fmt(o.billable)}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;color:var(--steel);">Confidence</div><div class="mono" style="font-weight:600;">${Math.round(o.confidence*100)}%</div></div>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;color:var(--steel);margin-bottom:6px;">Relevant SOW Clause</div>
+        <p style="font-size:13px;background:var(--paper);padding:10px 12px;border-left:3px solid var(--navy);margin-top:0;">${o.clause}</p>
+        <div style="font-size:10px;text-transform:uppercase;color:var(--steel);margin:16px 0 8px;">Supporting Evidence</div>
+        ${o.evidence.map(e=>`<div class="evidence-item">${e.text}<div class="src">SOURCE: ${e.src}</div></div>`).join("")}
+        <div style="font-size:10px;text-transform:uppercase;color:var(--steel);margin:16px 0 8px;">Timeline</div>
+        <div class="timeline">${o.timeline.map(t=>`<div class="t-item"><div class="date">${t.date}</div><div class="desc">${t.desc}</div></div>`).join("")}</div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-action="close-modal">Close</button></div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   EVENT HANDLING
+   ============================================================ */
+function attachGlobalHandlers(){
+  document.querySelectorAll("[data-nav]").forEach(el=> el.addEventListener("click", ()=> navigate(el.dataset.nav)));
+  document.querySelectorAll("[data-goto-project]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      state.activeProjectId = el.dataset.gotoProject;
+      saveState();
+      const p = activeProject();
+      navigate(p.contract.uploaded ? "opportunities" : "contract");
+    });
+  });
+  document.querySelectorAll("[data-filter]").forEach(el=> el.addEventListener("click", ()=> navigate("opportunities", {filter:el.dataset.filter})));
+  document.querySelectorAll("[data-ask]").forEach(el=> el.addEventListener("click", ()=> submitChat(decodeURIComponent(el.dataset.ask))));
+
+  const sendBtn = document.querySelector('[data-action="send-chat"]');
+  if(sendBtn){
+    sendBtn.addEventListener("click", ()=>{ const input=document.getElementById("chatInput"); if(input.value.trim()) submitChat(input.value.trim()); });
+    const input = document.getElementById("chatInput");
+    input.addEventListener("keydown", e=>{ if(e.key==="Enter" && input.value.trim()) submitChat(input.value.trim()); });
+  }
+
+  bindAction("logout", ()=>{ session.loggedIn=false; saveSession(); render(); });
+  bindAction("new-project", ()=>{ openFormModal(); });
+  bindAction("mock-upload-contract", ()=>{
+    const p = activeProject();
+    p.contract.uploaded = true; p.contract.fileName = "Uploaded_SOW.pdf";
+    p.contract.extracted = {
+      "Original Scope":"Extracted scope summary would appear here after AI processing of the uploaded file.",
+      "Contract Value": fmt(p.value) + " (Fixed Price)",
+      "Exclusions / Out of Scope":"Extraction pending review.",
+      "Payment Terms":"Milestone-based billing (sample extraction).",
+      "Change Request Process":"Change Request required over $2,000 (sample extraction).",
+      "Notice Period":"5-day notice of scope change (sample extraction).",
+      "Relevant Terms":"Client-directed acceleration billable at 1.5x (sample extraction)."
+    };
+    saveState(); render();
+  });
+  bindAction("reupload-contract", ()=>{ const p=activeProject(); p.contract.uploaded=false; saveState(); render(); });
+  bindAction("mock-upload-doc", ()=>{
+    const p = activeProject(); const n = p.docs.length+1;
+    p.docs.push({id:"d"+Date.now(), name:`Uploaded_File_${n}.pdf`, type:"pdf", date:new Date().toISOString().slice(0,10), size:"—"});
+    saveState(); render();
+  });
+  bindAction("run-analysis", ()=> navigate("opportunities"));
+  bindAction("view-opp", el=>{ subState.modalOppId = el.dataset.id; render(); });
+  bindAction("close-modal", ()=>{ subState.modalOppId = null; render(); });
+  bindAction("confirm-opp", el=> setOppStatus(el.dataset.id, "confirmed"));
+  bindAction("reject-opp", el=> setOppStatus(el.dataset.id, "rejected"));
+  bindAction("generate-co", el=>{
+    const p = activeProject(); const o = p.opportunities.find(o=>o.id===el.dataset.id);
+    o.status = "change-order";
+    o.changeOrder = { number: "CR-0"+(10+p.opportunities.filter(x=>x.changeOrder).length), status:"draft", submitted:new Date().toISOString().slice(0,10), approved:null };
+    saveState(); navigate("changeorders");
+  });
+  bindAction("export-co", ()=> alert("Export is disabled in this static demo — this would produce a PDF change request document."));
+  bindAction("goto-invoicing", ()=> navigate("invoicing"));
+}
+function bindAction(name, handler){ document.querySelectorAll(`[data-action="${name}"]`).forEach(el=> el.addEventListener("click", ()=> handler(el))); }
+function setOppStatus(id, status){ const p=activeProject(); const o=p.opportunities.find(o=>o.id===id); o.status=status; saveState(); render(); }
+function submitChat(q){
+  chatLog.push({role:"user", text:q});
+  const a = answerQuestion(q);
+  chatLog.push({role:"ai", text:a.text, ev:a.ev});
+  render();
+  setTimeout(()=>{ const log=document.getElementById("chatlog"); if(log) log.scrollTop = log.scrollHeight; }, 0);
+}
+function openFormModal(){
+  const name = prompt("Project name:"); if(!name) return;
+  const client = prompt("Client name:") || "—";
+  const value = Number(prompt("Agreed scope value (numbers only):")) || 0;
+  const id = "p"+Date.now();
+  state.projects.push({ id, name, client, value, currency:"USD", start:new Date().toISOString().slice(0,10), end:"", status:"Active", contract:{fileName:"", uploaded:false, extracted:null}, docs:[], opportunities:[], invoices:[] });
+  state.activeProjectId = id; saveState(); navigate("contract");
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+render();
+</script>
+</body>
+</html>

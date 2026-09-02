@@ -1,0 +1,8 @@
+[2025-11-12 10:14 AM] Dave Miller (Acme VP Marketing):
+Hey team, we just had an executive board meeting. We want to expand our launch to UK and European customers immediately on Day 1. Can we enable multi-currency checkout (EUR, GBP, CAD) with automated VAT/duties calculation using Global-e? Also, our CEO wants to add monthly recurring coffee bean subscriptions via Recharge. Let's make sure this is live with the initial rollout!
+
+[2025-11-12 10:28 AM] Sarah Lin (Nimbus Lead PM):
+Hi Dave! Multi-currency tax calculation and subscription recurring billing workflows are outside the original SOW baseline (§2 exclusions). We can certainly build both! Our senior engineer will need approximately 40 hours for Global-e setup and 35 hours for Recharge integration and custom cart widget development. Total estimated cost is around $11,250.
+
+[2025-11-12 11:05 AM] Dave Miller (Acme VP Marketing):
+Understood. It's critical for our Q4 revenue target. Please proceed with the engineering work and send over the formal change paperwork so we can get it signed off.

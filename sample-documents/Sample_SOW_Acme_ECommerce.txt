@@ -1,0 +1,47 @@
+# Statement of Work (SOW)
+**Project Name:** Acme Corp — Omnichannel E-Commerce Modernization  
+**Contract Value:** $120,000 USD (Fixed Price Milestone)  
+**Effective Date:** October 1, 2025  
+**Service Provider:** Nimbus Digital  
+**Client:** Acme Corporation  
+
+---
+
+### 1. Project Scope
+The service provider shall deliver the following components:
+1. Migration of core catalog and customer database from legacy Magento to Shopify Plus.
+2. Custom responsive storefront design based on Acme approved Figma templates (up to 2 design revision rounds).
+3. Standard integration with existing ERP (SAP Business One) for product inventory sync (hourly batch).
+4. Implementation of standard Shopify Payments gateway for USD transactions.
+5. User acceptance testing (UAT) period of 10 business days.
+
+---
+
+### 2. Exclusions & Out of Scope (§2)
+The following deliverables and tasks are expressly EXCLUDED from this agreement and shall require an approved Change Request:
+1. Multi-currency and international tax calculation engines (e.g., Avalara, Global-e).
+2. Custom third-party loyalty/rewards program integration.
+3. Subscription billing or recurring order workflows (e.g., Recharge).
+4. Custom native iOS/Android mobile applications.
+5. Data cleanup, enrichment, or legacy data migration beyond 5,000 active SKUs.
+6. Design revisions exceeding two (2) iterations after milestone sign-off.
+
+---
+
+### 3. Change Request & Variation Process (§3)
+Any request by the Client for work outside the defined Project Scope (§1) or falling under Exclusions (§2), or changes in requirements resulting in additional engineering/design hours, must be submitted in writing. 
+- The Service Provider will evaluate the request and provide a Change Request (CR) document specifying the proposed scope, estimated delivery impact, and cost based on a standard rate of $150/hour.
+- No out-of-scope work shall commence until the Client approves the Change Request in writing.
+
+---
+
+### 4. Payment Terms & Milestones (§4)
+- Milestone 1 (25% — $30,000): Project Kickoff & Architecture Signoff (Invoiced Upon Execution).
+- Milestone 2 (30% — $36,000): Storefront UI Development & ERP Batch Sync.
+- Milestone 3 (30% — $36,000): Catalog Migration & UAT Completion.
+- Milestone 4 (15% — $18,000): Production Launch & Go-Live Support (Net 15 days).
+
+---
+
+### 5. Notice Periods & Client Response (§5)
+The Client shall provide written notice of any defect or requested modification within seven (7) calendar days of milestone delivery. Lack of written rejection within 7 days constitutes formal milestone acceptance.

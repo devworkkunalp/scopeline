@@ -1,0 +1,23 @@
+namespace LedgerAndField.Api.Dtos;
+
+public record SignupRequest(string Email, string Password, string? CompanyName, string? DisplayName);
+public record LoginRequest(string Email, string Password);
+public record AuthResponse(string Token, string Email, string WorkspaceName, Guid WorkspaceId, string DisplayName, string Role, bool Onboarded, int OnboardingStep);
+
+public record OnboardingWorkspaceRequest(string? Name, string? CompanyName, string? Role);
+public record OnboardingProjectRequest(string? ProjectName, string? ClientName, decimal? ScopeValue, string? Currency);
+
+public record WorkspaceUpdateRequest(string Name);
+public record ProjectCreateRequest(string Name, string ClientName, decimal ScopeValue, string? Currency, DateOnly? StartDate, DateOnly? EndDate);
+public record ProjectPatchRequest(string? Name, string? ClientName, decimal? ScopeValue, string? Currency, DateOnly? StartDate, DateOnly? EndDate, string? Status);
+
+public record OpportunityUpdateRequest(string? Title, string? Description, decimal? EstimatedCost, decimal? BillableValue, decimal? InvoicedValue, string? Clause, string? Notes, string? Status, string? RejectionReason);
+public record StatusRequest(string Status, string? Reason);
+public record InvoiceCreateRequest(string Number, DateOnly Date, decimal Amount, decimal Collected, string? RelatedChangeOrder);
+public record ChangeRequestUpdateRequest(string? Reason, string? ChangedScope, string? CostBreakdown, decimal? BillableValue, string? Status);
+public record AssistantRequest(string? Question, string? Query);
+public record CheckScopeRequest(string Title, string Description, string? Source, string? DateLabel, decimal? EstimatedHours, decimal? HourlyRate);
+public record ManualOpportunityRequest(string Title, string Description, string? Type, decimal EstimatedCost, decimal BillableValue, string? Clause, string? Source, string? DateLabel, bool CreateChangeRequest);
+public record GenerateBaselineRequest(string RequirementsText, decimal? ContractValue, decimal? HourlyRate, string? IndustryPreset, int? TimelineWeeks, int? RevisionLimit);
+
+
