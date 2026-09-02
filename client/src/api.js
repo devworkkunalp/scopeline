@@ -1,5 +1,6 @@
 const TOKEN_KEY = "sl_token";
 const USER_KEY  = "sl_user";
+const API_BASE  = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "https://scopeline-yb9a.onrender.com" : "");
 
 export function getToken() { return localStorage.getItem(TOKEN_KEY); }
 export function setToken(t) { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); }
@@ -14,7 +15,8 @@ async function request(path, options = {}) {
   if (options.body && !(options.body instanceof FormData) && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
-  const res = await fetch(path, { ...options, headers });
+  const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? path : "/" + path}`;
+  const res = await fetch(url, { ...options, headers });
   if (res.status === 401) { clearAuth(); throw new Error("Unauthorized"); }
   if (!res.ok) { const text = await res.text(); throw new Error(text || res.statusText); }
   if (res.status === 204) return null;
