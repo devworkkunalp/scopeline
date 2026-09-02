@@ -24,8 +24,15 @@ builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<AnalysisService>();
 
-var postgresConn = builder.Configuration.GetConnectionString("Postgres") ?? builder.Configuration.GetConnectionString("DefaultConnection");
-var hasRealPostgres = !string.IsNullOrWhiteSpace(postgresConn) && !postgresConn.Contains("[YOUR-PASSWORD]");
+var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(postgresConn))
+    postgresConn = builder.Configuration.GetConnectionString("Postgres");
+
+var hasRealPostgres = !string.IsNullOrWhiteSpace(postgresConn)
+    && !postgresConn.Contains("YOUR_POSTGRES_PASSWORD_HERE")
+    && !postgresConn.Contains("[YOUR-PASSWORD]");
+
+Console.WriteLine($"[CONFIG] Database: {(hasRealPostgres ? "PostgreSQL (Configured)" : "SQLite (Fallback)")}");
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
@@ -35,7 +42,9 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     }
     else
     {
-        var sqliteConn = builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=scopeline.db";
+        var appData = Path.Combine(AppContext.BaseDirectory, "App_Data");
+        Directory.CreateDirectory(appData);
+        var sqliteConn = $"Data Source={Path.Combine(appData, "scopeline.db")}";
         opt.UseSqlite(sqliteConn);
     }
 });
@@ -46,13 +55,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         o.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "Scopeline",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "Scopeline",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            NameClaimType = "sub"
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddAuthorization();
@@ -91,7 +98,8 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var sampleDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "App_Data", "samples"));
+        var sampleDir = Path.Combine(AppContext.BaseDirectory, "App_Data", "samples");
+        Directory.CreateDirectory(sampleDir);
         SampleFilesGenerator.GenerateSamples(sampleDir);
     }
     catch { }
@@ -101,6 +109,25 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
 app.UseCors("app");
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[GLOBAL EXCEPTION] {context.Request.Method} {context.Request.Path}: {ex.Message}");
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message, details = ex.InnerException?.Message });
+        }
+    }
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
