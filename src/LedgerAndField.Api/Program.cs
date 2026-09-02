@@ -57,9 +57,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(o => o.AddPolicy("app", p => p
-    .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+    .SetIsOriginAllowed(_ => true)
     .AllowAnyHeader()
-    .AllowAnyMethod()));
+    .AllowAnyMethod()
+    .AllowCredentials()));
 
 var app = builder.Build();
 
@@ -70,17 +71,26 @@ using (var scope = app.Services.CreateScope())
     {
         var script = db.Database.GenerateCreateScript();
         await db.Database.ExecuteSqlRawAsync(script);
+        Console.WriteLine("[DB INIT] Database schema verified successfully.");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"[DB INIT] Table creation notice: {ex.Message}");
     }
 
-    await DemoSeeder.SeedAsync(db);
+    try
+    {
+        await DemoSeeder.SeedAsync(db);
+        Console.WriteLine("[DB INIT] Demo seed verified successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[DB INIT] Demo seed notice: {ex.Message}");
+    }
 
     try
     {
-        var sampleDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "sample-documents"));
+        var sampleDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "App_Data", "samples"));
         SampleFilesGenerator.GenerateSamples(sampleDir);
     }
     catch { }
@@ -90,8 +100,6 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
 app.UseCors("app");
-if (!app.Environment.IsDevelopment())
-    app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
