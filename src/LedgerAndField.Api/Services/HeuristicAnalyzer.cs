@@ -63,42 +63,98 @@ public class HeuristicAnalyzer
     public string Answer(string question, Project project)
     {
         var q = question.ToLowerInvariant();
-        var opps = project.Opportunities.ToList();
-        if (q.Contains("unbilled") || (q.Contains("approved") && q.Contains("invoice")))
+        var opps = project.Opportunities.Where(o => o.Status != "rejected").ToList();
+        var contract = project.Contract;
+
+        // 1. Unbilled Work / Potential Revenue Gap
+        if (q.Contains("unbilled") || q.Contains("potential") || q.Contains("leakage"))
         {
-            var rows = opps.Where(o => o.Status is "approved" or "change-order" && o.BillableValue - o.InvoicedValue > 0).ToList();
-            if (rows.Count == 0) return "No approved opportunities currently show a gap between approved and invoiced value on this project.";
-            return $"Found {rows.Count} item(s) with value not fully invoiced, totaling {rows.Sum(o => o.BillableValue - o.InvoicedValue):C0}:\n"
-                   + string.Join("\n", rows.Select(o => $"• {o.Title} — {(o.BillableValue - o.InvoicedValue):C0} outstanding"));
+            var unbilledOpps = opps.Where(o => (o.BillableValue - o.InvoicedValue) > 0).ToList();
+            if (unbilledOpps.Count == 0)
+                return $"All identified scope additions on {project.Name} have been invoiced in full.";
+
+            var totalUnbilled = unbilledOpps.Sum(o => o.BillableValue - o.InvoicedValue);
+            var breakdown = string.Join("\n", unbilledOpps.Select(o =>
+            {
+                var gap = o.BillableValue - o.InvoicedValue;
+                var cr = o.ChangeRequest != null ? $"[{o.ChangeRequest.Number}] " : "";
+                return $"• {cr}{o.Title}: {gap:C0} unbilled ({o.Type} · Status: {o.Status.ToUpper()})";
+            }));
+
+            return $"Found {unbilledOpps.Count} unbilled items on {project.Name} totaling {totalUnbilled:C0} in recoverable revenue:\n{breakdown}\n\nRecommended Action: Export Change Order PDFs or reconcile invoices under Invoice Tracking.";
         }
-        if (q.Contains("at risk"))
+
+        // 2. Revenue at Risk / Exposure
+        if (q.Contains("risk") || q.Contains("exposure") || q.Contains("overrun"))
         {
-            var risk = opps.Where(o => o.Status == "approved").Sum(o => o.BillableValue - o.InvoicedValue);
-            return risk > 0
-                ? $"{project.Name}: {risk:C0} at risk (approved but not invoiced)."
-                : "This project does not currently show approved-but-unbilled exposure.";
+            var activeOpps = opps.Where(o => o.Status is "detected" or "review" or "confirmed" or "change-order").ToList();
+            var totalRisk = activeOpps.Sum(o => o.BillableValue - o.InvoicedValue);
+
+            var items = string.Join("\n", activeOpps.Take(4).Select(o =>
+                $"• {o.Title} — {o.BillableValue:C0} billable ({o.Confidence:P0} confidence, Clause: {o.Clause})"));
+
+            return $"{project.Name} has {totalRisk:C0} in potential revenue at risk across {activeOpps.Count} scope items:\n{items}\n\nClient: {project.ClientName} · Base SOW: {project.ScopeValue:C0}.";
         }
-        if (q.Contains("why") && q.Contains("detect"))
+
+        // 3. Why was this change detected?
+        if (q.Contains("why") || q.Contains("detect") || q.Contains("flag") || q.Contains("reason"))
         {
-            var o = opps.FirstOrDefault(x => x.Status != "rejected") ?? opps.FirstOrDefault();
-            if (o is null) return "No opportunities have been detected yet. Upload a contract and project data, then run analysis.";
-            var src = string.Join(", ", o.Evidence.Select(e => e.Source));
-            return $"Take \"{o.Title}\" as an example: it was flagged because field and correspondence records describe work outside original scope, tied to {o.Clause}. Confidence {o.Confidence:P0}. Sources: {src}";
+            var reasons = opps.Take(3).Select(o =>
+            {
+                var src = string.Join(", ", o.Evidence.Select(e => e.Source));
+                return $"• \"{o.Title}\" ({o.Type}):\n  Flagged with {o.Confidence:P0} confidence because client requests expand beyond base scope.\n  Governing SOW Clause: {o.Clause}\n  Evidence Sources: {src}";
+            });
+
+            return $"Scope additions on {project.Name} were detected by matching project activity (emails, meeting notes, Slack) against contract boundary clauses:\n\n{string.Join("\n\n", reasons)}";
         }
-        if (q.Contains("clause"))
+
+        // 4. Approved changes not invoiced
+        if (q.Contains("approved") || q.Contains("change request") || q.Contains("invoice"))
         {
-            var o = opps.FirstOrDefault(x => x.Status != "rejected") ?? opps.FirstOrDefault();
-            return o is null ? "No opportunity is available to map a clause." : $"\"{o.Title}\" maps to {o.Clause}.";
+            var crItems = opps.Where(o => o.ChangeRequest != null || o.Status is "change-order" or "confirmed" or "approved").ToList();
+            if (crItems.Count == 0)
+                return $"No approved change requests currently pending invoice reconciliation on {project.Name}.";
+
+            var totalApproved = crItems.Sum(o => o.BillableValue);
+            var totalInvoiced = crItems.Sum(o => o.InvoicedValue);
+            var list = string.Join("\n", crItems.Select(o =>
+            {
+                var cr = o.ChangeRequest != null ? o.ChangeRequest.Number : "CR-Draft";
+                return $"• [{cr}] {o.Title}: Approved {o.BillableValue:C0} | Invoiced {o.InvoicedValue:C0} | Remaining Gap: {(o.BillableValue - o.InvoicedValue):C0}";
+            }));
+
+            return $"Approved Change Requests on {project.Name} ({totalApproved:C0} Total Value, {totalInvoiced:C0} Invoiced):\n{list}";
         }
-        var snippets = project.Documents
+
+        // 5. Clauses & Contract rules
+        if (q.Contains("clause") || q.Contains("sow") || q.Contains("contract") || q.Contains("variation"))
+        {
+            var clauses = new List<string>();
+            if (!string.IsNullOrWhiteSpace(contract?.OriginalScope))
+                clauses.Add($"§1.0 BASE SCOPE: {Truncate(contract.OriginalScope, 140)}");
+            if (!string.IsNullOrWhiteSpace(contract?.ExclusionsAllowances))
+                clauses.Add($"§2.0 EXCLUSIONS: {Truncate(contract.ExclusionsAllowances, 140)}");
+            if (!string.IsNullOrWhiteSpace(contract?.ChangeVariationRules))
+                clauses.Add($"§3.0 VARIATION RATE: {Truncate(contract.ChangeVariationRules, 140)}");
+            if (!string.IsNullOrWhiteSpace(contract?.PaymentTerms))
+                clauses.Add($"§4.0 PAYMENT TERMS: {Truncate(contract.PaymentTerms, 140)}");
+
+            return $"Applicable Statement of Work (SOW) terms for {project.Name}:\n\n" + string.Join("\n\n", clauses);
+        }
+
+        // 6. Direct document search fallback
+        var keywords = q.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(w => w.Length > 3).Select(w => w.ToLowerInvariant()).ToList();
+        var matches = project.Documents
             .Where(d => !string.IsNullOrWhiteSpace(d.ExtractedText))
             .SelectMany(d => SplitSentences(d.ExtractedText!).Select(s => (d.FileName, s)))
-            .Where(x => x.s.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(w => q.Contains(w.ToLowerInvariant()) && w.Length > 4))
-            .Take(5)
+            .Where(x => keywords.Any(k => x.s.ToLowerInvariant().Contains(k)))
+            .Take(4)
             .ToList();
-        if (snippets.Count > 0)
-            return "From uploaded project data:\n" + string.Join("\n", snippets.Select(s => $"• {Truncate(s.s, 180)} (SOURCE: {s.FileName})"));
-        return $"Based on uploaded contract and project data for {project.Name}, I don't have a direct match. Try asking about unbilled work, revenue at risk, evidence, or applicable contract clauses.";
+
+        if (matches.Count > 0)
+            return $"Relevant evidence extracted from {project.Name} documents:\n" + string.Join("\n", matches.Select(m => $"• \"{Truncate(m.s, 160)}\" (Source: {m.FileName})"));
+
+        return $"Based on the SOW and {opps.Count} detected opportunities for {project.Name} (Client: {project.ClientName}):\n• Total Project Value: {project.ScopeValue:C0}\n• Recoverable Unbilled Exposure: {opps.Sum(o => o.BillableValue - o.InvoicedValue):C0}\n\nTry asking about unbilled work, change requests, evidence sources, or SOW exclusions.";
     }
 
     private static (string type, double confidence)? Classify(string sentence)

@@ -20,7 +20,10 @@ public class OpenAiCompatibleClient(HttpClient http, IConfiguration config, ILog
         get
         {
             var o = Options();
-            return !string.IsNullOrWhiteSpace(o.ApiKey) && !string.IsNullOrWhiteSpace(o.BaseUrl)
+            return !string.IsNullOrWhiteSpace(o.ApiKey)
+                   && !o.ApiKey.Contains("YOUR_OPENROUTER_API_KEY_HERE")
+                   && !o.ApiKey.Contains("[YOUR-")
+                   && !string.IsNullOrWhiteSpace(o.BaseUrl)
                    && !string.Equals(o.Provider, "Heuristic", StringComparison.OrdinalIgnoreCase);
         }
     }
