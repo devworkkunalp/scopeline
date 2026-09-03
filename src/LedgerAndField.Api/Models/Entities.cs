@@ -4,8 +4,9 @@ public class Workspace
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = "Nimbus Digital";
-    public string Plan { get; set; } = "Team Plan · Trial";
+    public string Plan { get; set; } = "Team Plan · 30-Day Free Trial";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset TrialEndsAt { get; set; } = DateTimeOffset.UtcNow.AddDays(30);
     public ICollection<User> Users { get; set; } = new List<User>();
     public ICollection<Project> Projects { get; set; } = new List<Project>();
 }
@@ -18,6 +19,7 @@ public class User
     public string Email { get; set; } = "";
     public string PasswordHash { get; set; } = "";
     public string DisplayName { get; set; } = "";
+    public string PhoneNumber { get; set; } = "";
     public string Role { get; set; } = "pm"; // "pm" or "founder"
     public bool Onboarded { get; set; } = false;
     public int OnboardingStep { get; set; } = 0;

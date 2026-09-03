@@ -13,25 +13,34 @@ namespace LedgerAndField.Api.Controllers;
 public class AuthController(AppDbContext db, TokenService tokens) : ControllerBase
 {
     private readonly PasswordHasher<User> _hasher = new();
+    private static readonly System.Text.RegularExpressions.Regex EmailRegex = 
+        new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
     [HttpPost("auth/signup")]
     [HttpPost("api/auth/register")]
     public async Task<ActionResult<AuthResponse>> Signup(SignupRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
-            return BadRequest("Email and password are required.");
-            
-        var email = req.Email.Trim().ToLowerInvariant();
-        if (await db.Users.AnyAsync(u => u.Email == email))
-            return Conflict("An account with that email already exists.");
+            return BadRequest("Work email and password are required.");
 
-        var workspaceName = string.IsNullOrWhiteSpace(req.CompanyName) ? "My Workspace" : req.CompanyName.Trim();
+        var email = req.Email.Trim().ToLowerInvariant();
+        if (!EmailRegex.IsMatch(email))
+            return BadRequest("Please provide a valid business email address (e.g. name@company.com).");
+
+        if (req.Password.Length < 8)
+            return BadRequest("Password must be at least 8 characters long.");
+
+        if (await db.Users.AnyAsync(u => u.Email == email))
+            return Conflict("An account with that email address already exists. Please sign in instead.");
+
+        var workspaceName = string.IsNullOrWhiteSpace(req.CompanyName) ? "My Company" : req.CompanyName.Trim();
         var workspace = new Workspace
         {
             Id = Guid.NewGuid(),
             Name = workspaceName,
-            Plan = "Team Plan · Trial",
-            CreatedAt = DateTimeOffset.UtcNow
+            Plan = "Team Plan · 30-Day Free Trial",
+            CreatedAt = DateTimeOffset.UtcNow,
+            TrialEndsAt = DateTimeOffset.UtcNow.AddDays(30)
         };
 
         var user = new User
@@ -40,6 +49,7 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
             WorkspaceId = workspace.Id,
             Email = email,
             DisplayName = string.IsNullOrWhiteSpace(req.DisplayName) ? req.Email.Split('@')[0] : req.DisplayName.Trim(),
+            PhoneNumber = req.PhoneNumber?.Trim() ?? "",
             Role = "pm",
             Onboarded = false,
             OnboardingStep = 0,
@@ -52,7 +62,7 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
         await db.SaveChangesAsync();
 
         var token = tokens.Create(user, workspace);
-        return Ok(new AuthResponse(token, user.Email, workspace.Name, workspace.Id, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep));
+        return Ok(new AuthResponse(token, user.Email, workspace.Name, workspace.Id, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, 30));
     }
 
     [HttpPost("auth/login")]
@@ -69,8 +79,9 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
         var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, req.Password);
         if (result == PasswordVerificationResult.Failed) return Unauthorized("Invalid email or password.");
 
+        var trialDays = Math.Max(0, (int)Math.Ceiling((user.Workspace.TrialEndsAt - DateTimeOffset.UtcNow).TotalDays));
         var token = tokens.Create(user, user.Workspace);
-        return Ok(new AuthResponse(token, user.Email, user.Workspace.Name, user.WorkspaceId, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep));
+        return Ok(new AuthResponse(token, user.Email, user.Workspace.Name, user.WorkspaceId, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, trialDays));
     }
 
     [Authorize]

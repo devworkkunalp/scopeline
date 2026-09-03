@@ -110,7 +110,9 @@ export default function Sidebar({
         {/* Footer */}
         <div className="sidebar-foot">
           <div className="co">{workspace?.name || user?.workspaceName || 'Nimbus Digital'}</div>
-          <div>{workspace?.plan || 'Team Plan · Trial'}</div>
+          <div style={{ color: '#10B981', fontSize: 11, fontWeight: 600 }}>
+            {workspace?.plan || (user?.trialDaysRemaining ? `30-Day Trial (${user.trialDaysRemaining}d left)` : '30-Day Free Trial')}
+          </div>
           <div className="who">
             <span>{user?.displayName || user?.email?.split('@')[0] || 'You'}</span>
             <button className="logout" onClick={onLogout}>

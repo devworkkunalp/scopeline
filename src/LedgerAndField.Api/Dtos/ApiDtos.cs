@@ -1,10 +1,10 @@
 namespace LedgerAndField.Api.Dtos;
 
-public record SignupRequest(string Email, string Password, string? CompanyName, string? DisplayName);
+public record SignupRequest(string Email, string Password, string? CompanyName, string? DisplayName, string? PhoneNumber);
 public record LoginRequest(string Email, string Password);
-public record AuthResponse(string Token, string Email, string WorkspaceName, Guid WorkspaceId, string DisplayName, string Role, bool Onboarded, int OnboardingStep);
+public record AuthResponse(string Token, string Email, string WorkspaceName, Guid WorkspaceId, string DisplayName, string Role, bool Onboarded, int OnboardingStep, string? PhoneNumber, int TrialDaysRemaining);
 
-public record OnboardingWorkspaceRequest(string? Name, string? CompanyName, string? Role);
+public record OnboardingWorkspaceRequest(string? Name, string? CompanyName, string? Role, string? PhoneNumber);
 public record OnboardingProjectRequest(string? ProjectName, string? ClientName, decimal? ScopeValue, string? Currency);
 
 public record WorkspaceUpdateRequest(string Name);

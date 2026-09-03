@@ -60,6 +60,7 @@ export default function LandingPage({ onAuthSuccess }) {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [authError, setAuthError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -73,18 +74,47 @@ export default function LandingPage({ onAuthSuccess }) {
   async function handleAuthSubmit(e) {
     e.preventDefault();
     setAuthError('');
+
+    // Strict client-side validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setAuthError('Please enter a valid work email address (e.g. name@company.com).');
+      return;
+    }
+
+    if (password.length < 8) {
+      setAuthError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (authTab === 'register') {
+      if (!displayName.trim()) {
+        setAuthError('Please enter your full name.');
+        return;
+      }
+      if (!companyName.trim()) {
+        setAuthError('Please enter your company or agency name.');
+        return;
+      }
+      if (!phoneNumber.trim()) {
+        setAuthError('Please enter your mobile phone number for account verification & security.');
+        return;
+      }
+    }
+
     setBusy(true);
     try {
       let res;
       if (authTab === 'register') {
         res = await api.signup({
-          email,
+          email: email.trim(),
           password,
-          companyName: companyName || 'Digital Studio',
-          displayName: displayName || email.split('@')[0],
+          companyName: companyName.trim(),
+          displayName: displayName.trim(),
+          phoneNumber: phoneNumber.trim(),
         });
       } else {
-        res = await api.login(email, password);
+        res = await api.login(email.trim(), password);
       }
       setToken(res.token);
       setUser({
@@ -92,8 +122,10 @@ export default function LandingPage({ onAuthSuccess }) {
         email: res.email,
         displayName: res.displayName,
         role: res.role,
+        phoneNumber: res.phoneNumber,
         onboarded: res.onboarded,
         onboardingStep: res.onboardingStep,
+        trialDaysRemaining: res.trialDaysRemaining || 30,
       });
       setShowAuthModal(false);
       onAuthSuccess(res);
@@ -115,14 +147,14 @@ export default function LandingPage({ onAuthSuccess }) {
       {/* TOP URGENCY BANNER */}
       <div className="landing-top-banner">
         <span>
-          🔥 <strong>Early Access Program:</strong> First 50 Users get <strong>14-Day Full Access Free</strong> (Only 12 spots left)
+          🔥 <strong>Early Access Program:</strong> 30-Day Full Access Free Trial · <strong>No Credit Card Required</strong>
         </span>
         <button
           type="button"
           className="banner-cta"
           onClick={() => openAuth('register')}
         >
-          Claim Access Pass →
+          Claim 30-Day Pass →
         </button>
       </div>
 
@@ -555,7 +587,7 @@ export default function LandingPage({ onAuthSuccess }) {
             <div className="modal-head">
               <div>
                 <div style={{ fontSize: 10.5, letterSpacing: '0.08em', color: 'var(--orange)', textTransform: 'uppercase', fontWeight: 600 }}>
-                  {authTab === 'register' ? '🔥 14-Day Free Trial Pass' : 'Account Access'}
+                  {authTab === 'register' ? '✨ 30-Day Full Access Trial' : 'Account Access'}
                 </div>
                 <h3>{authTab === 'register' ? 'Create Your Account' : 'Sign in to Scopeline'}</h3>
               </div>
@@ -570,7 +602,7 @@ export default function LandingPage({ onAuthSuccess }) {
                   className={authTab === 'register' ? 'active' : ''}
                   onClick={() => { setAuthTab('register'); setAuthError(''); }}
                 >
-                  Start Free Trial
+                  Start 30-Day Free Trial
                 </button>
                 <button
                   type="button"
@@ -587,20 +619,20 @@ export default function LandingPage({ onAuthSuccess }) {
                 {authTab === 'register' && (
                   <>
                     <div className="field">
-                      <label className="field-label">Your Name</label>
+                      <label className="field-label">Full Name *</label>
                       <input
                         type="text"
-                        placeholder="e.g. Jamie Rivera"
+                        placeholder="e.g. Alex Henderson"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         required
                       />
                     </div>
                     <div className="field">
-                      <label className="field-label">Company / Agency Name</label>
+                      <label className="field-label">Company / Agency Name *</label>
                       <input
                         type="text"
-                        placeholder="e.g. Nimbus Digital"
+                        placeholder="e.g. Apex Digital Studio"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         required
@@ -610,34 +642,57 @@ export default function LandingPage({ onAuthSuccess }) {
                 )}
 
                 <div className="field">
-                  <label className="field-label">Work Email</label>
+                  <label className="field-label">Work Email *</label>
                   <input
                     type="email"
-                    placeholder="you@agency.com"
+                    placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
 
+                {authTab === 'register' && (
+                  <div className="field">
+                    <label className="field-label">Mobile Phone Number *</label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. +1 (555) 000-0000 or +91 9876543210"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                    />
+                    <div style={{ fontSize: 11, color: 'var(--steel)', marginTop: 3 }}>
+                      🔒 Used for account recovery, security alerts &amp; password resets.
+                    </div>
+                  </div>
+                )}
+
                 <div className="field">
-                  <label className="field-label">Password</label>
+                  <label className="field-label">Password *</label>
                   <input
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Min 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    minLength={8}
                   />
                 </div>
+
+                {authTab === 'register' && (
+                  <div style={{ background: '#F8FAFC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 4, marginBottom: 12, fontSize: 11.5, color: 'var(--steel)' }}>
+                    ✓ <strong>No credit card required.</strong> Instant 30-day trial with full access to SOW baseline analysis, change orders, and AI scope detection.
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   className="btn orange full-width"
                   disabled={busy}
-                  style={{ marginTop: 8, padding: '10px' }}
+                  style={{ marginTop: 4, padding: '10px' }}
                 >
-                  {busy ? 'Processing…' : authTab === 'register' ? 'Start 14-Day Free Trial →' : 'Sign In →'}
+                  {busy ? 'Processing…' : authTab === 'register' ? 'Activate 30-Day Free Trial →' : 'Sign In →'}
                 </button>
               </form>
 

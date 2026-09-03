@@ -26,6 +26,8 @@ public class OnboardingController(AppDbContext db) : ControllerBase
             user.Workspace.Name = req.CompanyName.Trim();
         if (!string.IsNullOrWhiteSpace(req.Name))
             user.DisplayName = req.Name.Trim();
+        if (!string.IsNullOrWhiteSpace(req.PhoneNumber))
+            user.PhoneNumber = req.PhoneNumber.Trim();
         if (!string.IsNullOrWhiteSpace(req.Role))
             user.Role = req.Role.Trim().ToLowerInvariant();
 
