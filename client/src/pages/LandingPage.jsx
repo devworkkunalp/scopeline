@@ -96,10 +96,6 @@ export default function LandingPage({ onAuthSuccess }) {
         setAuthError('Please enter your company or agency name.');
         return;
       }
-      if (!phoneNumber.trim()) {
-        setAuthError('Please enter your mobile phone number for account verification & security.');
-        return;
-      }
     }
 
     setBusy(true);
@@ -654,16 +650,15 @@ export default function LandingPage({ onAuthSuccess }) {
 
                 {authTab === 'register' && (
                   <div className="field">
-                    <label className="field-label">Mobile Phone Number *</label>
+                    <label className="field-label">Mobile Phone Number (Optional)</label>
                     <input
                       type="tel"
                       placeholder="e.g. +1 (555) 000-0000 or +91 9876543210"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
                     />
                     <div style={{ fontSize: 11, color: 'var(--steel)', marginTop: 3 }}>
-                      🔒 Used for account recovery, security alerts &amp; password resets.
+                      🔒 Used for security alerts, account recovery &amp; password resets.
                     </div>
                   </div>
                 )}

@@ -88,6 +88,17 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN IF NOT EXISTS \"PhoneNumber\" text DEFAULT '';");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Workspaces\" ADD COLUMN IF NOT EXISTS \"TrialEndsAt\" timestamp with time zone DEFAULT NOW() + interval '30 days';");
+        Console.WriteLine("[DB INIT] Column migrations (PhoneNumber, TrialEndsAt) verified successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[DB INIT] Column migration notice: {ex.Message}");
+    }
+
+    try
+    {
         await DemoSeeder.SeedAsync(db);
         Console.WriteLine("[DB INIT] Demo seed verified successfully.");
     }

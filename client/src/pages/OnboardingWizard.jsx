@@ -44,10 +44,6 @@ export default function OnboardingWizard({ onComplete }) {
         setErr('Please enter your company or agency name.');
         return;
       }
-      if (!phoneNumber.trim()) {
-        setErr('Please enter your mobile phone number for security verification.');
-        return;
-      }
 
       setBusy(true);
       try {
@@ -197,16 +193,15 @@ export default function OnboardingWizard({ onComplete }) {
             </div>
 
             <div className="field">
-              <label className="field-label">Mobile Phone Number (with Country Code) *</label>
+              <label className="field-label">Mobile Phone Number (Optional)</label>
               <input
                 type="tel"
                 placeholder="e.g. +1 (555) 019-2834 or +91 98765 43210"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                required
               />
               <div style={{ fontSize: 11, color: 'var(--steel)', marginTop: 4 }}>
-                🔒 Required for identity authentication, security alerts, and instant password resets.
+                🔒 Used for security alerts, account recovery &amp; password resets.
               </div>
             </div>
 
