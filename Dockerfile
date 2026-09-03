@@ -10,6 +10,7 @@ RUN dotnet publish "LedgerAndField.Api.csproj" -c Release -o /app/publish /p:Use
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
+RUN apt-get update && apt-get install -y libfontconfig1 fontconfig && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1

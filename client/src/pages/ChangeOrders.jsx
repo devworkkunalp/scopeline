@@ -81,8 +81,24 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
     }
   }
 
-  function openPdf(cr) {
-    window.open(api.coPdfUrl(cr.id), '_blank');
+  async function downloadPdf(cr) {
+    try {
+      setBusy(cr.id + 'pdf');
+      const blob = await api.coExport(cr.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${cr.number || 'Change_Order'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      showToast(`Downloaded ${cr.number || 'Change Order'}.pdf`);
+    } catch (ex) {
+      showToast('PDF Export Error: ' + ex.message);
+    } finally {
+      setBusy('');
+    }
   }
 
   if (!activeProject) {
@@ -223,8 +239,12 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
                   <button className="btn ghost small" onClick={() => setSelected(opp)}>
                     View Supporting Evidence
                   </button>
-                  <button className="btn ghost small" onClick={() => openPdf(cr)}>
-                    Export PDF
+                  <button
+                    className="btn ghost small"
+                    onClick={() => downloadPdf(cr)}
+                    disabled={busy === cr.id + 'pdf'}
+                  >
+                    {busy === cr.id + 'pdf' ? 'Generating PDF…' : '📄 Export PDF'}
                   </button>
                   <button
                     className="btn ghost small"
