@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getToken, getUser, clearAuth, api } from './api.js';
 
 import Sidebar from './components/Sidebar.jsx';
@@ -14,6 +14,8 @@ import ChangeOrders from './pages/ChangeOrders.jsx';
 import InvoiceTracking from './pages/InvoiceTracking.jsx';
 import AiAssistant from './pages/AiAssistant.jsx';
 import ClientReviewPortal from './pages/ClientReviewPortal.jsx';
+import NotificationToast from './components/NotificationToast.jsx';
+import NotificationCenter from './components/NotificationCenter.jsx';
 
 export default function App() {
   // Check for public review portal magic link token (?token=... or /review/:token)
@@ -28,6 +30,12 @@ export default function App() {
   const [page, setPage] = useState('dashboard');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Real-time Inbound Activity & Scope Change Notifications
+  const [toasts, setToasts] = useState([]);
+  const [notificationHistory, setNotificationHistory] = useState([]);
+  const knownOppIdsRef = useRef(new Set());
+  const initialSyncDoneRef = useRef(false);
 
   const fetchProjects = useCallback(async () => {
     if (!getToken()) return;
@@ -69,6 +77,80 @@ export default function App() {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  // Reset known opps when activeProjectId changes
+  useEffect(() => {
+    knownOppIdsRef.current = new Set();
+    initialSyncDoneRef.current = false;
+  }, [activeProjectId]);
+
+  // Background poller for live inbound emails and newly detected opportunities
+  useEffect(() => {
+    if (!authed || !activeProjectId) return;
+
+    let isMounted = true;
+
+    async function checkActivity() {
+      try {
+        const opps = await api.opportunities(activeProjectId);
+        if (!isMounted || !Array.isArray(opps)) return;
+
+        if (!initialSyncDoneRef.current) {
+          // Record baseline on first fetch
+          opps.forEach((o) => knownOppIdsRef.current.add(o.id));
+          initialSyncDoneRef.current = true;
+          return;
+        }
+
+        // Detect new items
+        const newOpps = opps.filter((o) => !knownOppIdsRef.current.has(o.id));
+        if (newOpps.length > 0) {
+          newOpps.forEach((opp) => {
+            knownOppIdsRef.current.add(opp.id);
+            const isEmail =
+              opp.evidence?.some(
+                (e) =>
+                  e.src?.toLowerCase().includes('inbound') ||
+                  e.src?.toLowerCase().includes('email') ||
+                  e.src?.toLowerCase().endsWith('.eml')
+              ) || opp.desc?.toLowerCase().includes('forwarded');
+
+            const notif = {
+              id: opp.id || String(Date.now() + Math.random()),
+              type: isEmail ? 'inbound_email' : 'opportunity',
+              badge: isEmail ? 'Inbound Email Ingested' : 'Scope Opportunity Detected',
+              title: opp.title,
+              message: opp.desc
+                ? opp.desc.length > 120
+                  ? opp.desc.slice(0, 117) + '...'
+                  : opp.desc
+                : 'New scope item parsed and audited against SOW.',
+              billableValue: opp.billable,
+              actionLabel: isEmail ? 'Review Opportunity' : 'View Opportunity',
+              timeAgo: 'Just now',
+              createdAt: new Date(),
+              read: false,
+            };
+
+            setToasts((prev) => [notif, ...prev.slice(0, 2)]);
+            setNotificationHistory((prev) => [notif, ...prev]);
+          });
+
+          // Live update project list and counters
+          fetchProjects();
+        }
+      } catch (e) {
+        // silent catch
+      }
+    }
+
+    checkActivity();
+    const interval = setInterval(checkActivity, 7000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [authed, activeProjectId, fetchProjects]);
 
   function handleAuthSuccess(res) {
     setAuthed(true);
@@ -120,6 +202,15 @@ export default function App() {
 
   return (
     <div id="app">
+      <NotificationToast
+        notifications={toasts}
+        onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+        onAction={(notif) => {
+          setPage(notif.type === 'inbound_email' ? 'data' : 'opportunities');
+          setToasts((prev) => prev.filter((t) => t.id !== notif.id));
+        }}
+      />
+
       <Sidebar
         page={page}
         setPage={setPage}
@@ -134,6 +225,75 @@ export default function App() {
       />
 
       <main className="main">
+        {/* Top Real-time System Bar */}
+        <div
+          className="top-system-bar"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 24px',
+            background: '#FFFFFF',
+            borderBottom: '1px solid #D8D2C2',
+            position: 'sticky',
+            top: 0,
+            zIndex: 90,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: '11px',
+                fontFamily: "'IBM Plex Mono', monospace",
+                color: '#5C6B73',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {activeProject ? `${activeProject.name}` : 'Scopeline'}
+            </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '10.5px',
+                color: '#2F6F4E',
+                background: '#D8E8DD',
+                padding: '2px 8px',
+                borderRadius: '3px',
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontWeight: 600,
+              }}
+              title="CloudMailin Webhook Listening at 4d5fcfd49f452cf19bbf@cloudmailin.net"
+            >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#10B981',
+                  display: 'inline-block',
+                  boxShadow: '0 0 6px #10B981',
+                }}
+              />
+              LIVE INBOX LISTENER ACTIVE
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <NotificationCenter
+              notifications={notificationHistory}
+              onClear={() => setNotificationHistory([])}
+              onSelect={(notif) => {
+                setPage(notif.type === 'inbound_email' ? 'data' : 'opportunities');
+              }}
+              activeProject={activeProject}
+            />
+          </div>
+        </div>
+
         {/* Mobile Header Bar — visible only on responsive/mobile screens */}
         <div className="mobile-header-bar">
           <button
