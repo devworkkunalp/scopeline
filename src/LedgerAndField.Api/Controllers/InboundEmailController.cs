@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using LedgerAndField.Api.Data;
 using LedgerAndField.Api.Dtos;
@@ -25,35 +26,80 @@ public class InboundEmailController(
     [HttpPost("api/webhooks/inbound-email")]
     public async Task<IActionResult> HandleInboundWebhook([FromForm] InboundEmailWebhookRequest? formReq, [FromBody] InboundEmailWebhookRequest? jsonReq)
     {
-        var req = formReq ?? jsonReq ?? new InboundEmailWebhookRequest(null, null, null, null, null, null, null);
-        
-        var to = req.To ?? (Request.HasFormContentType ? (Request.Form["to"].FirstOrDefault() ?? Request.Form["recipient"].FirstOrDefault() ?? "") : "");
-        var from = req.From ?? (Request.HasFormContentType ? (Request.Form["from"].FirstOrDefault() ?? Request.Form["sender"].FirstOrDefault() ?? "Unknown Sender") : "Unknown Sender");
-        var subject = req.Subject ?? (Request.HasFormContentType ? (Request.Form["subject"].FirstOrDefault() ?? "Inbound Client Request") : "Inbound Client Request");
-        var body = req.Text ?? req.Html ?? (Request.HasFormContentType ? (Request.Form["text"].FirstOrDefault() ?? Request.Form["html"].FirstOrDefault() ?? "") : "");
+        string to = formReq?.To ?? jsonReq?.To ?? "";
+        string from = formReq?.From ?? jsonReq?.From ?? "";
+        string subject = formReq?.Subject ?? jsonReq?.Subject ?? "";
+        string body = formReq?.Text ?? formReq?.Html ?? jsonReq?.Text ?? jsonReq?.Html ?? "";
 
-        // Check if raw EML attachment exists
-        if (Request.HasFormContentType && Request.Form.Files.Count > 0)
+        if (Request.HasFormContentType)
         {
-            var file = Request.Form.Files.FirstOrDefault(f => f.FileName.EndsWith(".eml", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".msg", StringComparison.OrdinalIgnoreCase)) ?? Request.Form.Files[0];
-            if (file != null)
+            if (string.IsNullOrWhiteSpace(to))
+                to = Request.Form["to"].FirstOrDefault() ?? Request.Form["recipient"].FirstOrDefault() ?? Request.Form["headers[to]"].FirstOrDefault() ?? "";
+            if (string.IsNullOrWhiteSpace(from))
+                from = Request.Form["from"].FirstOrDefault() ?? Request.Form["sender"].FirstOrDefault() ?? Request.Form["headers[from]"].FirstOrDefault() ?? "Client Stakeholder";
+            if (string.IsNullOrWhiteSpace(subject))
+                subject = Request.Form["subject"].FirstOrDefault() ?? Request.Form["headers[subject]"].FirstOrDefault() ?? "Inbound Client Request";
+            if (string.IsNullOrWhiteSpace(body))
+                body = Request.Form["plain"].FirstOrDefault() ?? Request.Form["text"].FirstOrDefault() ?? Request.Form["html"].FirstOrDefault() ?? "";
+
+            // Check if raw EML attachment exists
+            if (Request.Form.Files.Count > 0)
             {
-                await using var stream = file.OpenReadStream();
-                var extracted = await extractor.ExtractAsync(file.FileName, file.ContentType, stream);
-                if (!string.IsNullOrWhiteSpace(extracted))
+                var file = Request.Form.Files.FirstOrDefault(f => f.FileName.EndsWith(".eml", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".msg", StringComparison.OrdinalIgnoreCase)) ?? Request.Form.Files[0];
+                if (file != null)
                 {
-                    body = extracted;
+                    await using var stream = file.OpenReadStream();
+                    var extracted = await extractor.ExtractAsync(file.FileName, file.ContentType, stream);
+                    if (!string.IsNullOrWhiteSpace(extracted)) body = extracted;
                 }
             }
         }
-
-        if (string.IsNullOrWhiteSpace(body) && !string.IsNullOrWhiteSpace(req.Eml))
+        else if (string.IsNullOrWhiteSpace(body))
         {
-            body = req.Eml;
+            try
+            {
+                Request.EnableBuffering();
+                Request.Body.Position = 0;
+                using var reader = new StreamReader(Request.Body, leaveOpen: true);
+                var jsonString = await reader.ReadToEndAsync();
+                if (!string.IsNullOrWhiteSpace(jsonString))
+                {
+                    using var doc = JsonDocument.Parse(jsonString);
+                    var root = doc.RootElement;
+
+                    // CloudMailin Normalized Format
+                    if (root.TryGetProperty("headers", out var headers))
+                    {
+                        if (string.IsNullOrWhiteSpace(to) && headers.TryGetProperty("to", out var hTo)) to = hTo.GetString() ?? "";
+                        if (string.IsNullOrWhiteSpace(from) && headers.TryGetProperty("from", out var hFrom)) from = hFrom.GetString() ?? "";
+                        if (string.IsNullOrWhiteSpace(subject) && headers.TryGetProperty("subject", out var hSub)) subject = hSub.GetString() ?? "";
+                    }
+
+                    if (root.TryGetProperty("envelope", out var envelope))
+                    {
+                        if (string.IsNullOrWhiteSpace(to) && envelope.TryGetProperty("to", out var envTo)) to = envTo.GetString() ?? "";
+                        if (string.IsNullOrWhiteSpace(from) && envelope.TryGetProperty("from", out var envFrom)) from = envFrom.GetString() ?? "";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(body))
+                    {
+                        if (root.TryGetProperty("plain", out var plainProp)) body = plainProp.GetString() ?? "";
+                        else if (root.TryGetProperty("text", out var textProp)) body = textProp.GetString() ?? "";
+                        else if (root.TryGetProperty("html", out var htmlProp)) body = htmlProp.GetString() ?? "";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(to) && root.TryGetProperty("to", out var flatTo)) to = flatTo.GetString() ?? "";
+                    if (string.IsNullOrWhiteSpace(from) && root.TryGetProperty("from", out var flatFrom)) from = flatFrom.GetString() ?? "";
+                    if (string.IsNullOrWhiteSpace(subject) && root.TryGetProperty("subject", out var flatSub)) subject = flatSub.GetString() ?? "";
+                }
+            }
+            catch { }
         }
 
-        // Extract Project ID from recipient address (e.g. inbound+d3b07384-d113-4ac6-b184-b0496155a019@scopeline.io or project-ecommerce-d3b07384@inbound.scopeline.io)
-        var project = await ResolveProjectFromRecipientAsync(to);
+        if (string.IsNullOrWhiteSpace(from)) from = "Client Stakeholder";
+        if (string.IsNullOrWhiteSpace(subject)) subject = "Client Scope Request";
+
+        var project = await ResolveProjectAsync(to, subject, body);
         if (project == null)
         {
             return NotFound(new { error = "Target project could not be resolved from inbound email recipient address.", recipient = to });
@@ -81,13 +127,13 @@ public class InboundEmailController(
         var rawBody = req.Body ?? "";
 
         var fromMatch = Regex.Match(rawBody, @"(?:From|Sender):\s*([^\r\n<]+(?:<[^>]+>)?)", RegexOptions.IgnoreCase);
-        if (fromMatch.Success && (string.IsNullOrWhiteSpace(from) || from == "Unknown Client"))
+        if (fromMatch.Success && (string.IsNullOrWhiteSpace(from) || from == "Unknown Client" || from == "Client Stakeholder"))
         {
             from = fromMatch.Groups[1].Value.Trim();
         }
 
         var subjectMatch = Regex.Match(rawBody, @"(?:Subject|Re|Fwd):\s*([^\r\n]+)", RegexOptions.IgnoreCase);
-        if (subjectMatch.Success && (string.IsNullOrWhiteSpace(subject) || subject == "Forwarded Client Request"))
+        if (subjectMatch.Success && (string.IsNullOrWhiteSpace(subject) || subject == "Forwarded Client Request" || subject == "Client Scope Request"))
         {
             subject = subjectMatch.Groups[1].Value.Trim();
         }
@@ -133,15 +179,14 @@ public class InboundEmailController(
         });
     }
 
-    private async Task<Project?> ResolveProjectFromRecipientAsync(string recipient)
+    private async Task<Project?> ResolveProjectAsync(string recipient, string subject, string body)
     {
-        if (string.IsNullOrWhiteSpace(recipient)) return null;
-
         // 1. Try match GUID in inbound+{guid}@...
         var guidMatch = Regex.Match(recipient, @"([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})");
         if (guidMatch.Success && Guid.TryParse(guidMatch.Groups[1].Value, out var pId))
         {
-            return await db.Projects.Include(p => p.Contract).Include(p => p.Opportunities).FirstOrDefaultAsync(p => p.Id == pId);
+            var p = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities).FirstOrDefaultAsync(x => x.Id == pId);
+            if (p != null) return p;
         }
 
         // 2. Try match short hex ID (8 chars)
@@ -149,11 +194,24 @@ public class InboundEmailController(
         if (shortMatch.Success)
         {
             var shortId = shortMatch.Groups[1].Value.ToLowerInvariant();
-            var matched = await db.Projects.Include(p => p.Contract).Include(p => p.Opportunities).ToListAsync();
-            return matched.FirstOrDefault(p => p.Id.ToString("N").StartsWith(shortId));
+            var allProjects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities).ToListAsync();
+            var matched = allProjects.FirstOrDefault(p => p.Id.ToString("N").StartsWith(shortId));
+            if (matched != null) return matched;
         }
 
-        return null;
+        // 3. Search by project name match in subject or body
+        var projects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities).OrderByDescending(x => x.CreatedAt).ToListAsync();
+        foreach (var p in projects)
+        {
+            if (!string.IsNullOrWhiteSpace(p.Name) && p.Name.Length > 3 && 
+                (subject.Contains(p.Name, StringComparison.OrdinalIgnoreCase) || body.Contains(p.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return p;
+            }
+        }
+
+        // 4. Default to latest active project (supports single-inbox forwarding like CloudMailin!)
+        return projects.FirstOrDefault();
     }
 
     private async Task<InboundEmailResultDto> ProcessInboundEmailAsync(
