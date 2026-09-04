@@ -35,27 +35,29 @@ describe('InboundEmailModal Component', () => {
     });
   });
 
-  it('renders inbound forwarding address and sample email presets', async () => {
+  it('renders inbound forwarding address and instant paste box', async () => {
     render(<InboundEmailModal activeProject={mockProject} onClose={() => {}} />);
 
-    expect(await screen.findByText(/Inbound Email Forwarding & Zero-Manual Scope Ingestion/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Forward Client Email for Instant Scope Ingestion/i)).toBeInTheDocument();
     expect(screen.getByText('inbound+proj-123@scopeline.io')).toBeInTheDocument();
-    expect(screen.getByText(/Multi-Currency & Subscriptions/i)).toBeInTheDocument();
+    expect(screen.getByText(/Option B: Paste Email Thread or Drop Content Here/i)).toBeInTheDocument();
   });
 
-  it('allows simulating inbound email ingestion and displays out-of-scope verdict with auto-created opportunity', async () => {
+  it('allows pasting email and auto-processing scope with zero manual forms', async () => {
     const mockIngested = vi.fn();
     render(<InboundEmailModal activeProject={mockProject} onClose={() => {}} onIngested={mockIngested} />);
 
-    const submitBtn = screen.getByRole('button', { name: /Simulate Inbound Email Ingestion/i });
+    const sampleBtn = screen.getByRole('button', { name: /Paste Sample Email/i });
+    fireEvent.click(sampleBtn);
+
+    const submitBtn = screen.getByRole('button', { name: /Auto-Process Email/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
       expect(api.simulateInboundEmail).toHaveBeenCalledWith(
         'proj-123',
         expect.objectContaining({
-          from: expect.any(String),
-          subject: expect.any(String),
+          body: expect.stringContaining('Stripe Multi-Currency'),
           createChangeRequest: true,
         })
       );

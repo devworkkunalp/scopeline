@@ -59,7 +59,7 @@ public class InboundEmailController(
             return NotFound(new { error = "Target project could not be resolved from inbound email recipient address.", recipient = to });
         }
 
-        var result = await ProcessInboundEmailAsync(project, from, subject, body, claimedHours: 20, hourlyRate: 150, createChangeRequest: true);
+        var result = await ProcessInboundEmailAsync(project, from, subject, body, customHours: null, customRate: null, createChangeRequest: true);
         return Ok(result);
     }
 
@@ -75,13 +75,33 @@ public class InboundEmailController(
 
         if (project is null) return NotFound("Project not found in current workspace");
 
+        // Automatically extract From/Subject from body if user simply pasted an entire forwarded thread
+        var from = req.From;
+        var subject = req.Subject;
+        var rawBody = req.Body ?? "";
+
+        var fromMatch = Regex.Match(rawBody, @"(?:From|Sender):\s*([^\r\n<]+(?:<[^>]+>)?)", RegexOptions.IgnoreCase);
+        if (fromMatch.Success && (string.IsNullOrWhiteSpace(from) || from == "Unknown Client"))
+        {
+            from = fromMatch.Groups[1].Value.Trim();
+        }
+
+        var subjectMatch = Regex.Match(rawBody, @"(?:Subject|Re|Fwd):\s*([^\r\n]+)", RegexOptions.IgnoreCase);
+        if (subjectMatch.Success && (string.IsNullOrWhiteSpace(subject) || subject == "Forwarded Client Request"))
+        {
+            subject = subjectMatch.Groups[1].Value.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(from)) from = "Client Stakeholder";
+        if (string.IsNullOrWhiteSpace(subject)) subject = "Client Scope Request";
+
         var result = await ProcessInboundEmailAsync(
             project,
-            req.From,
-            req.Subject,
-            req.Body,
-            req.ClaimedHours ?? 20m,
-            req.HourlyRate ?? 150m,
+            from,
+            subject,
+            rawBody,
+            req.ClaimedHours,
+            req.HourlyRate,
             req.CreateChangeRequest
         );
 
@@ -109,7 +129,7 @@ public class InboundEmailController(
             standardInboundAddress = standardAddress,
             vanityInboundAddress = vanityAddress,
             webhookEndpoint = "/api/inbound/email",
-            instructions = "Forward client emails or add this address as a BCC/forwarding recipient. Scopeline automatically parses the email, ingests it as proof, and audits scope against the contract baseline."
+            instructions = "Forward client emails to this address. Scopeline automatically parses the email, ingests it as proof, and audits scope against the contract baseline."
         });
     }
 
@@ -141,8 +161,8 @@ public class InboundEmailController(
         string from,
         string subject,
         string body,
-        decimal claimedHours,
-        decimal hourlyRate,
+        decimal? customHours,
+        decimal? customRate,
         bool createChangeRequest)
     {
         var isClient = (project.Perspective ?? "").Equals("client", StringComparison.OrdinalIgnoreCase);
@@ -182,6 +202,31 @@ public class InboundEmailController(
                                    combinedText.Contains("change order") || combinedText.Contains("additional");
 
         var isOutOfScope = isExplicitOutOfScope || !isInScopeBugFix;
+
+        // Auto-estimate realistic hours based on task complexity if not provided
+        decimal claimedHours;
+        if (customHours.HasValue && customHours.Value > 0)
+        {
+            claimedHours = customHours.Value;
+        }
+        else if (combinedText.Contains("pipeline") || combinedText.Contains("bi report") || combinedText.Contains("export"))
+        {
+            claimedHours = 32m;
+        }
+        else if (combinedText.Contains("multi-currency") || combinedText.Contains("subscription") || combinedText.Contains("integration"))
+        {
+            claimedHours = 24m;
+        }
+        else if (isInScopeBugFix)
+        {
+            claimedHours = 4m;
+        }
+        else
+        {
+            claimedHours = 18m;
+        }
+
+        var hourlyRate = customRate.HasValue && customRate.Value > 0 ? customRate.Value : 150m;
         var calcCost = Math.Round(claimedHours * (hourlyRate * 0.7m), 2);
         var calcBillable = Math.Round(claimedHours * hourlyRate, 2);
 
@@ -229,7 +274,7 @@ public class InboundEmailController(
                 ]
             };
 
-            var breakdownText = $"Role Breakdown: {claimedHours}h Engineering @ {hourlyRate:C0}/hr. Est. Cost {calcCost:C0}. Billable Total {calcBillable:C0}.";
+            var breakdownText = $"Auto-Calculated Scope: {claimedHours}h Engineering @ {hourlyRate:C0}/hr. Est. Cost {calcCost:C0}. Billable Total {calcBillable:C0}.";
             opp.Notes = breakdownText;
 
             if (createChangeRequest)
