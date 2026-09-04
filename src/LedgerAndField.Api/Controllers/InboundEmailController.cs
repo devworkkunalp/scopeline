@@ -67,33 +67,65 @@ public class InboundEmailController(
                     using var doc = JsonDocument.Parse(jsonString);
                     var root = doc.RootElement;
 
-                    // CloudMailin Normalized Format
-                    if (root.TryGetProperty("headers", out var headers))
+                    // CloudMailin Normalized Format with case-insensitive property lookup
+                    static string GetJsonProp(JsonElement el, params string[] names)
                     {
-                        if (string.IsNullOrWhiteSpace(to) && headers.TryGetProperty("to", out var hTo)) to = hTo.GetString() ?? "";
-                        if (string.IsNullOrWhiteSpace(from) && headers.TryGetProperty("from", out var hFrom)) from = hFrom.GetString() ?? "";
-                        if (string.IsNullOrWhiteSpace(subject) && headers.TryGetProperty("subject", out var hSub)) subject = hSub.GetString() ?? "";
+                        if (el.ValueKind != JsonValueKind.Object) return "";
+                        foreach (var p in el.EnumerateObject())
+                        {
+                            foreach (var n in names)
+                            {
+                                if (string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (p.Value.ValueKind == JsonValueKind.String)
+                                        return p.Value.GetString() ?? "";
+                                    return p.Value.ToString();
+                                }
+                            }
+                        }
+                        return "";
                     }
 
-                    if (root.TryGetProperty("envelope", out var envelope))
+                    if (root.TryGetProperty("headers", out var headers) || root.TryGetProperty("Headers", out headers))
                     {
-                        if (string.IsNullOrWhiteSpace(to) && envelope.TryGetProperty("to", out var envTo)) to = envTo.GetString() ?? "";
-                        if (string.IsNullOrWhiteSpace(from) && envelope.TryGetProperty("from", out var envFrom)) from = envFrom.GetString() ?? "";
+                        if (string.IsNullOrWhiteSpace(to)) to = GetJsonProp(headers, "to", "recipient", "delivered-to", "x-original-to");
+                        if (string.IsNullOrWhiteSpace(from)) from = GetJsonProp(headers, "from", "sender", "return-path");
+                        if (string.IsNullOrWhiteSpace(subject)) subject = GetJsonProp(headers, "subject");
+                    }
+
+                    if (root.TryGetProperty("envelope", out var envelope) || root.TryGetProperty("Envelope", out envelope))
+                    {
+                        if (string.IsNullOrWhiteSpace(to)) to = GetJsonProp(envelope, "to", "recipient");
+                        if (string.IsNullOrWhiteSpace(from)) from = GetJsonProp(envelope, "from", "sender");
                     }
 
                     if (string.IsNullOrWhiteSpace(body))
                     {
-                        if (root.TryGetProperty("plain", out var plainProp)) body = plainProp.GetString() ?? "";
-                        else if (root.TryGetProperty("text", out var textProp)) body = textProp.GetString() ?? "";
-                        else if (root.TryGetProperty("html", out var htmlProp)) body = htmlProp.GetString() ?? "";
+                        body = GetJsonProp(root, "plain", "text", "html", "body");
                     }
 
-                    if (string.IsNullOrWhiteSpace(to) && root.TryGetProperty("to", out var flatTo)) to = flatTo.GetString() ?? "";
-                    if (string.IsNullOrWhiteSpace(from) && root.TryGetProperty("from", out var flatFrom)) from = flatFrom.GetString() ?? "";
-                    if (string.IsNullOrWhiteSpace(subject) && root.TryGetProperty("subject", out var flatSub)) subject = flatSub.GetString() ?? "";
+                    if (string.IsNullOrWhiteSpace(to)) to = GetJsonProp(root, "to", "recipient");
+                    if (string.IsNullOrWhiteSpace(from)) from = GetJsonProp(root, "from", "sender");
+                    if (string.IsNullOrWhiteSpace(subject)) subject = GetJsonProp(root, "subject");
                 }
             }
             catch { }
+        }
+
+        // Extract From and Subject from body if forwarded thread markers exist
+        if (!string.IsNullOrWhiteSpace(body))
+        {
+            var fromMatch = Regex.Match(body, @"(?:From|Sender):\s*([^\r\n<]+(?:<[^>]+>)?)", RegexOptions.IgnoreCase);
+            if (fromMatch.Success && (string.IsNullOrWhiteSpace(from) || from == "Client Stakeholder"))
+            {
+                from = fromMatch.Groups[1].Value.Trim();
+            }
+
+            var subjectMatch = Regex.Match(body, @"(?:Subject|Re|Fwd):\s*([^\r\n]+)", RegexOptions.IgnoreCase);
+            if (subjectMatch.Success && (string.IsNullOrWhiteSpace(subject) || subject == "Client Scope Request"))
+            {
+                subject = subjectMatch.Groups[1].Value.Trim();
+            }
         }
 
         if (string.IsNullOrWhiteSpace(from)) from = "Client Stakeholder";
@@ -199,16 +231,24 @@ public class InboundEmailController(
             if (matched != null) return matched;
         }
 
-        // 3. Match user by sender email (e.g. kunalpatil0360@gmail.com)
-        var cleanFrom = Regex.Match(from, @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").Value.ToLowerInvariant();
-        if (!string.IsNullOrWhiteSpace(cleanFrom))
+        // 3. Match any user email found anywhere across from, recipient, subject, or body
+        var combinedMeta = $"{from} {recipient} {subject} {body}";
+        var emailMatches = Regex.Matches(combinedMeta, @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+            .Select(m => m.Value.ToLowerInvariant())
+            .Where(e => !e.Contains("cloudmailin.net") && !e.Contains("scopeline.io"))
+            .Distinct()
+            .ToList();
+
+        if (emailMatches.Count > 0)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == cleanFrom);
-            if (user != null)
+            var allUsers = await db.Users.ToListAsync();
+            var matchedUser = allUsers.FirstOrDefault(u => emailMatches.Contains(u.Email.ToLowerInvariant()));
+            if (matchedUser != null)
             {
                 var userProjects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities)
-                    .Where(p => p.WorkspaceId == user.WorkspaceId)
-                    .OrderByDescending(p => p.CreatedAt)
+                    .Where(p => p.WorkspaceId == matchedUser.WorkspaceId)
+                    .OrderByDescending(p => p.Opportunities.Count)
+                    .ThenByDescending(p => p.CreatedAt)
                     .ToListAsync();
 
                 foreach (var up in userProjects)
@@ -226,8 +266,12 @@ public class InboundEmailController(
             }
         }
 
-        // 4. Search by project name match in subject or body
-        var projects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities).OrderByDescending(x => x.CreatedAt).ToListAsync();
+        // 4. Search by project name match in subject or body across all active projects
+        var projects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities)
+            .OrderByDescending(x => x.Opportunities.Count)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
         foreach (var p in projects)
         {
             if (!string.IsNullOrWhiteSpace(p.Name) && p.Name.Length > 3 && 
@@ -237,7 +281,7 @@ public class InboundEmailController(
             }
         }
 
-        // 5. Default to active project (Northwind Retail or first active project)
+        // 5. Default to the most active project with largest opportunity count / active Northwind project
         return projects.FirstOrDefault(p => p.Name.Contains("Northwind")) ?? projects.FirstOrDefault();
     }
 
