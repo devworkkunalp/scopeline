@@ -515,6 +515,30 @@ public class ProjectsController(
         var calcCost = estHours * hourly * 0.7m;
         var calcBillable = estHours * hourly;
 
+        if (req.RoleEstimates != null && req.RoleEstimates.Count > 0)
+        {
+            decimal roleTotalBillable = 0m;
+            decimal roleTotalCost = 0m;
+            decimal totalRoleHours = 0m;
+
+            foreach (var r in req.RoleEstimates.Where(x => x.Hours > 0))
+            {
+                var rRate = r.HourlyRate > 0 ? r.HourlyRate : hourly;
+                var rCost = r.DirectCostRate ?? (rRate * 0.55m);
+                roleTotalBillable += r.Hours * rRate;
+                roleTotalCost += r.Hours * rCost;
+                totalRoleHours += r.Hours;
+            }
+
+            if (roleTotalBillable > 0)
+            {
+                calcBillable = roleTotalBillable;
+                calcCost = roleTotalCost > 0 ? roleTotalCost : (calcBillable * 0.55m);
+                estHours = totalRoleHours;
+                hourly = totalRoleHours > 0 ? Math.Round(calcBillable / totalRoleHours, 2) : hourly;
+            }
+        }
+
         var cleanTitle = (req.Title ?? "").Trim();
         var cleanDesc = (req.Description ?? "").Trim();
         var combined = $"{cleanTitle} {cleanDesc}".ToLowerInvariant();
@@ -713,6 +737,14 @@ public class ProjectsController(
             ]
         };
 
+        var breakdownText = !string.IsNullOrWhiteSpace(req.CostBreakdown)
+            ? req.CostBreakdown.Trim()
+            : (req.RoleEstimates != null && req.RoleEstimates.Count > 0
+                ? $"Role Breakdown: {string.Join(", ", req.RoleEstimates.Where(r => r.Hours > 0).Select(r => $"{r.Hours}h {r.Role} @ {r.HourlyRate:C0}/hr"))}. Est. Cost {opp.EstimatedCost:C0}. Billable Total {opp.BillableValue:C0}."
+                : $"Estimated cost {opp.EstimatedCost:C0}. Proposed billable value {opp.BillableValue:C0}.");
+
+        opp.Notes = breakdownText;
+
         if (req.CreateChangeRequest)
         {
             var count = await db.ChangeRequests.CountAsync(c => c.Opportunity.ProjectId == id);
@@ -726,7 +758,7 @@ public class ProjectsController(
                 Submitted = DateOnly.FromDateTime(DateTime.UtcNow),
                 Reason = opp.Type,
                 ChangedScope = opp.Description,
-                CostBreakdown = $"Estimated cost {opp.EstimatedCost:C0}. Proposed billable value {opp.BillableValue:C0}."
+                CostBreakdown = breakdownText
             };
         }
 
