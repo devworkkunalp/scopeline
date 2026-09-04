@@ -1154,10 +1154,11 @@ export default function LandingPage({ onAuthSuccess }) {
                 </div>
                 <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Lock SOW Baseline</h3>
                 <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
-                  Upload your signed SOW/MSA (PDF/Word). AI automatically extracts covered deliverables (§1), exclusions (§2), and agreed billing rates ($150/hr).
+                  <strong>Option A:</strong> Upload signed SOW/MSA (PDF/Word) for instant clause extraction.<br />
+                  <strong>Option B (No Document?):</strong> Use our AI Baseline Formulator to generate protective scope rules and rates ($150/hr) from your basic project details.
                 </p>
                 <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--orange)', fontWeight: 600 }}>
-                  ✓ Signed Priority Rule
+                  ✓ Upload SOW OR Formulate with AI
                 </div>
               </div>
 
@@ -1212,10 +1213,11 @@ export default function LandingPage({ onAuthSuccess }) {
                 </div>
                 <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Lock Vendor Warranty</h3>
                 <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
-                  Upload vendor contract to lock in the agreed baseline, 90-day post-launch warranty SLAs (§5.1), and fixed price milestone terms.
+                  <strong>Option A:</strong> Upload vendor agreement to extract scope bounds and 90-day defect warranty SLAs (§5.1).<br />
+                  <strong>Option B (No Contract?):</strong> Input agreed deliverables and let AI generate your protective Buyer Shield baseline.
                 </p>
                 <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: '#2563EB', fontWeight: 600 }}>
-                  ✓ Warranty SLA Protection
+                  ✓ Upload Contract OR AI-Guided Creation
                 </div>
               </div>
 

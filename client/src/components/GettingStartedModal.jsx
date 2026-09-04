@@ -7,18 +7,18 @@ export default function GettingStartedModal({ onClose, onNavigate, perspective =
   const steps = [
     {
       num: 1,
-      tag: isClient ? 'VENDOR SOW BASELINE' : 'CONTRACT SETUP',
-      title: isClient ? '1. Establish Contract Baseline & Warranty Terms' : '1. Upload Signed SOW & Contract Baseline',
+      tag: isClient ? 'UPLOAD OR AI FORMULATE' : 'UPLOAD OR AI FORMULATE',
+      title: isClient ? '1. Establish Contract Baseline & Warranty (Upload or AI-Generate)' : '1. Lock SOW Baseline (Upload Contract OR Formulate with AI)',
       desc: isClient
-        ? 'Upload your vendor MSA/SOW to lock in agreed deliverables, 90-day defect warranties, and change order rules to prevent unauthorized vendor billing.'
-        : 'Upload your signed SOW or MSA (PDF, DOCX, TXT) to establish contractual boundaries, covered deliverables, out-of-scope exclusions, and hourly billing rates.',
+        ? 'Two flexible options: (1) Upload your vendor MSA/SOW (PDF/Word), or (2) Have no contract document? Input agreed project milestones and let AI formulate a protective Buyer Shield baseline with 90-day defect warranty terms.'
+        : 'Two flexible options: (1) Upload your signed SOW or MSA (PDF, DOCX, TXT) for instant extraction, or (2) Have no document? Use our AI Baseline Formulator to generate protective scope boundaries, deliverable clauses, and billing rates from your informal proposal in 60 seconds.',
       pageKey: 'contract',
       btnLabel: isClient ? 'Go to Baseline SOW' : 'Go to Scope of Work',
-      highlight: 'Saves hours of manual contract review by extracting clauses into searchable parameters.',
+      highlight: 'No formal contract document? No problem! Use AI Baseline Formulator to build a bulletproof SOW baseline in under 1 minute.',
       bulletPoints: [
-        'Automatic extraction of §1 Covered Scope & §2 Exclusions',
-        'Locked-in hourly rates, payment terms, and notice rules',
-        'Live contract comparison engine for every subsequent deliverable',
+        'Option A: Upload signed PDF, DOCX, or TXT for automatic clause extraction',
+        'Option B: AI Baseline Formulator — input basic deliverables to generate full SOW rules',
+        'Automatic §1 Covered Deliverables, §2 Out-of-Scope Exclusions, and hourly rates ($150/hr)',
       ],
       icon: '📄',
     },
