@@ -1,0 +1,16 @@
+VENDOR SUPPLEMENTARY INVOICE / CHANGE NOTICE
+Date: April 05, 2026
+From: Billing Dept <accounts@devconsulting.com>
+To: Kunal Patil <kunal@nexusventures.io>
+Subject: Additional Engineering Fee: Memory Leak & High Concurrency Remediation (+$2,200.00)
+
+Dear Client,
+
+During staging load testing, our engineers had to rewrite the checkout session cache handler to fix a memory leak that caused server 500 errors under 1,000 concurrent simulated shoppers.
+
+Because high concurrency debugging required 14.6 hours of senior backend engineering, we have attached supplementary invoice #INV-SUPP-08 for $2,200.00 USD.
+
+Please process this payment with your upcoming milestone disbursement.
+
+Accounts Receivable,
+DevConsulting Global Ltd.

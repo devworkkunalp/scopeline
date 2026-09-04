@@ -1,0 +1,17 @@
+CHANGE REQUEST SUBMISSION
+Date: March 20, 2026
+From: Marcus Vance <m.vance@devconsulting.com> (DevConsulting Global)
+To: Kunal Patil <kunal@nexusventures.io> (Nexus Ventures)
+Subject: Change Order #05 — SAP NetWeaver ERP Two-Way Inventory Sync (+$6,800.00)
+
+Dear Kunal,
+
+As discussed in our architectural review, your finance team requested two-way inventory and order synchronization with your internal SAP NetWeaver ERP system.
+
+Per Section 2.1 of our Master Services Agreement, custom enterprise ERP integrations are excluded from baseline scope. We have estimated this integration at 45.3 hours @ $150.00/hr = $6,800.00 USD.
+
+Please review and confirm approval so we can allocate our SAP integration engineers.
+
+Best regards,
+Marcus Vance
+DevConsulting Global Ltd.

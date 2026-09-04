@@ -11,6 +11,10 @@ export default function Sidebar({
   mobileOpen,
   onCloseMobile,
 }) {
+  const activeProject = projects?.find((p) => p.id === activeProjectId);
+  const perspective = activeProject?.perspective || workspace?.perspective || user?.perspective || 'vendor';
+  const isClient = perspective === 'client';
+
   const navItem = (num, label, key) => (
     <button
       key={key}
@@ -40,7 +44,7 @@ export default function Sidebar({
         <div className="brand">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="mark">
-              <div className="swatch" />
+              <div className="swatch" style={isClient ? { background: '#3B82F6' } : {}} />
               <h1>SCOPELINE</h1>
             </div>
             {mobileOpen && (
@@ -54,10 +58,12 @@ export default function Sidebar({
               </button>
             )}
           </div>
-          <div className="tag">Scope &amp; Revenue Recovery</div>
+          <div className="tag" style={isClient ? { color: '#93C5FD' } : {}}>
+            {isClient ? '🛡️ Client Shield Edition' : '🏢 Agency Edition'}
+          </div>
         </div>
 
-        {/* Project switcher */}
+        {/* Project / Engagement Switcher */}
         {projects && projects.length > 0 && (
           <div style={{ padding: '10px 14px 12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <div
@@ -70,7 +76,7 @@ export default function Sidebar({
                 fontWeight: 600,
               }}
             >
-              Active Project
+              {isClient ? 'Active Vendor Engagement' : 'Active Project'}
             </div>
             <div className="sidebar-select-wrapper">
               <select
@@ -91,17 +97,17 @@ export default function Sidebar({
         {/* Nav */}
         <nav className="nav">
           <div className="group-label">Overview</div>
-          {navItem('05', 'Revenue Dashboard', 'dashboard')}
+          {navItem('05', isClient ? 'Scope Defense Dashboard' : 'Revenue Dashboard', 'dashboard')}
 
           <div className="group-label">Setup</div>
-          {navItem('01', 'Workspace & Projects', 'projects')}
-          {navItem('02', 'Scope of Work', 'contract')}
-          {navItem('03', 'Project Activity', 'data')}
+          {navItem('01', isClient ? 'Workspace & Vendors' : 'Workspace & Projects', 'projects')}
+          {navItem('02', isClient ? 'Baseline SOW Contract' : 'Scope of Work', 'contract')}
+          {navItem('03', isClient ? 'Vendor Correspondence' : 'Project Activity', 'data')}
 
-          <div className="group-label">Recovery Workflow</div>
-          {navItem('04', 'Scope Opportunities', 'opportunities')}
-          {navItem('05', 'Change Requests', 'change-orders')}
-          {navItem('06', 'Invoice Tracking', 'invoices')}
+          <div className="group-label">{isClient ? 'Audit & Defense' : 'Recovery Workflow'}</div>
+          {navItem('04', isClient ? 'Scope & Overbilling Audit' : 'Scope Opportunities', 'opportunities')}
+          {navItem('05', isClient ? 'Vendor Change Claims' : 'Change Requests', 'change-orders')}
+          {navItem('06', isClient ? 'Vendor Invoices' : 'Invoice Tracking', 'invoices')}
 
           <div className="group-label">Ask</div>
           {navItem('07', 'AI Assistant', 'assistant')}

@@ -18,9 +18,10 @@ const STATUS_COLORS = {
   paid: 'var(--green)',
 };
 
-export default function Dashboard({ setPage, setActiveProjectId }) {
+export default function Dashboard({ setPage, setActiveProjectId, perspective = 'vendor', onTogglePerspective }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isClient = perspective === 'client';
 
   useEffect(() => {
     api.dashboard().then(setData).catch(console.error).finally(() => setLoading(false));
@@ -43,45 +44,45 @@ export default function Dashboard({ setPage, setActiveProjectId }) {
   } = data;
 
   const funnel = [
-    { key: 'detected', label: 'Detected / Review', val: underReview },
-    { key: 'confirmed', label: 'Confirmed', val: confirmed },
-    { key: 'change-order', label: 'Change Request', val: changeOrder },
-    { key: 'approved', label: 'Approved', val: approved },
-    { key: 'invoiced', label: 'Invoiced', val: invoiced },
-    { key: 'paid', label: 'Paid', val: paid },
+    { key: 'detected', label: isClient ? 'Claim Under Audit' : 'Detected / Review', val: underReview },
+    { key: 'confirmed', label: isClient ? 'Challenged (In-Scope)' : 'Confirmed', val: confirmed },
+    { key: 'change-order', label: isClient ? 'Variation Under Review' : 'Change Request', val: changeOrder },
+    { key: 'approved', label: isClient ? 'Authorized Addition' : 'Approved', val: approved },
+    { key: 'invoiced', label: isClient ? 'Vendor Invoiced' : 'Invoiced', val: invoiced },
+    { key: 'paid', label: isClient ? 'Disbursed' : 'Paid', val: paid },
   ];
   const funnelTotal = funnel.reduce((s, f) => s + f.val, 0) || 1;
 
   return (
     <>
       <TitleBlock
-        title="Revenue Dashboard"
-        sub="Portfolio-wide leakage, recovery and collection status"
+        title={isClient ? 'Scope Defense & Overbilling Dashboard' : 'Revenue Dashboard'}
+        sub={isClient ? 'Vendor claim audits, double-billing prevention & contract budget defense' : 'Portfolio-wide leakage, recovery and collection status'}
       />
       <div className="content">
         {/* KPI strip */}
         <div className="grid cols-4 mb-20" style={{ marginBottom: 30 }}>
-          <div className="kpi" style={{ '--kpi-accent': 'var(--steel)' }}>
-            <div className="label">Total Potential Revenue</div>
+          <div className="kpi" style={{ '--kpi-accent': isClient ? '#3B82F6' : 'var(--steel)' }}>
+            <div className="label">{isClient ? 'Total Claims Audited' : 'Total Potential Revenue'}</div>
             <div className="value">{fmtK(potential)}</div>
             <div className="delta up">
-              {data.opportunityCount || 0} opportunities across {projects.length} project{projects.length !== 1 ? 's' : ''}
+              {data.opportunityCount || 0} {isClient ? 'claims across' : 'opportunities across'} {projects.length} project{projects.length !== 1 ? 's' : ''}
             </div>
           </div>
           <div className="kpi" style={{ '--kpi-accent': 'var(--amber)' }}>
-            <div className="label">Revenue Under Review</div>
+            <div className="label">{isClient ? 'Pending Scope Review' : 'Revenue Under Review'}</div>
             <div className="value">{fmtK(underReview)}</div>
-            <div className="delta">Awaiting PM decision</div>
+            <div className="delta">{isClient ? 'Vendor variation notices awaiting decision' : 'Awaiting PM decision'}</div>
           </div>
-          <div className="kpi" style={{ '--kpi-accent': 'var(--orange)' }}>
-            <div className="label">Revenue At Risk (Unbilled)</div>
-            <div className="value">{fmtK(atRisk)}</div>
-            <div className="delta down">Approved but not yet invoiced</div>
+          <div className="kpi" style={{ '--kpi-accent': isClient ? '#10B981' : 'var(--orange)' }}>
+            <div className="label">{isClient ? 'Overbilling Defended & Saved' : 'Revenue At Risk (Unbilled)'}</div>
+            <div className="value">{fmtK(isClient ? confirmed + paid : atRisk)}</div>
+            <div className="delta up">{isClient ? 'Flagged as already in SOW scope' : 'Approved but not yet invoiced'}</div>
           </div>
           <div className="kpi" style={{ '--kpi-accent': 'var(--green)' }}>
-            <div className="label">Collected To Date</div>
-            <div className="value">{fmtK(paid)}</div>
-            <div className="delta up">From recovered opportunities</div>
+            <div className="label">{isClient ? 'Authorized Variations' : 'Collected To Date'}</div>
+            <div className="value">{fmtK(isClient ? approved : paid)}</div>
+            <div className="delta up">{isClient ? 'Verified out-of-scope additions' : 'From recovered opportunities'}</div>
           </div>
         </div>
 

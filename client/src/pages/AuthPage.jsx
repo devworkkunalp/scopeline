@@ -3,10 +3,10 @@ import { api, setToken, setUser } from '../api.js';
 
 export default function AuthPage({ onAuthSuccess }) {
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
-  const [email, setEmail] = useState('demo@scopeline.local');
-  const [password, setPassword] = useState('Demo123!');
-  const [company, setCompany] = useState('Nimbus Digital');
-  const [name, setName] = useState('Jamie Rivera');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [company, setCompany] = useState('');
+  const [name, setName] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -42,12 +42,6 @@ export default function AuthPage({ onAuthSuccess }) {
     } finally {
       setBusy(false);
     }
-  }
-
-  function handleDemoLogin() {
-    setEmail('demo@scopeline.local');
-    setPassword('Demo123!');
-    setMode('login');
   }
 
   return (
@@ -164,28 +158,6 @@ export default function AuthPage({ onAuthSuccess }) {
               {busy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Create Account'}
             </button>
           </form>
-
-          {mode === 'login' && (
-            <div style={{ marginTop: 12, textAlign: 'center' }}>
-              <button
-                type="button"
-                onClick={handleDemoLogin}
-                style={{ background: 'none', border: 'none', color: 'var(--steel)', fontSize: 11.5, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace" }}
-              >
-                Use Demo Login: demo@scopeline.local / Demo123!
-              </button>
-            </div>
-          )}
-
-          <div className="auth-divider">or continue with</div>
-          <div className="auth-sso">
-            <button type="button" onClick={() => { setEmail('google.user@scopeline.local'); setPassword('Demo123!'); }}>
-              Continue with Google
-            </button>
-            <button type="button" onClick={() => { setEmail('ms.user@scopeline.local'); setPassword('Demo123!'); }}>
-              Continue with Microsoft
-            </button>
-          </div>
 
           <div className="auth-foot">
             {mode === 'login' ? (

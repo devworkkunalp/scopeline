@@ -1,0 +1,27 @@
+================================================================================
+MASTER SERVICES STATEMENT OF WORK — VENDOR CONTRACT
+================================================================================
+PROJECT:           Enterprise Web Application & Portal
+CLIENT (BUYER):    Nexus Ventures Inc. ("Client / Founder")
+DEVELOPMENT FIRM:  DevConsulting Global Ltd. ("Vendor / Agency")
+CONTRACT SUM:      $185,000 USD (Fixed-Price Deliverables)
+HOURLY RATE:       $150.00 USD / Hour
+EFFECTIVE DATE:    February 01, 2026
+
+1.0 CONTRACTED BASELINE DELIVERABLES (INCLUDED IN $185,000 SUM):
+1.1 Authentication & RBAC: Multi-role user login, admin permissions, and SSO.
+1.2 Search & Discovery: Product and content catalog with multi-attribute faceted category filters (brand, pricing, availability).
+1.3 Performance SLA: Sub-500ms server response under standard concurrent loads.
+1.4 Browser & Mobile SLA: Cross-browser support including Chrome, Safari, Edge, Firefox, iOS, and Android web.
+
+2.0 EXCLUSIONS & NON-INCLUDED SCOPE:
+2.1 Custom enterprise ERP integrations (e.g. SAP NetWeaver, Oracle Financials).
+2.2 Custom AI / Machine Learning predictive recommendation pipelines.
+2.3 Third-party data warehousing or external data pipelines.
+
+3.0 VARIATION & CHANGE REQUEST TERMS:
+3.1 Any legitimate work falling under Section 2.0 shall be billed at $150.00/hour subject to prior written approval from Client.
+
+5.0 WARRANTY & DEFECT REMEDIATION:
+5.1 90-Day Post-Launch Warranty: Vendor warrants all deliverables shall operate free from reproducible defects, memory leaks, or crashes. Any bug fixes during delivery and warranty shall be corrected at NO ADDITIONAL COST to Client.
+================================================================================

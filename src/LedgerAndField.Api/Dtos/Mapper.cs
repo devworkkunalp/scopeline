@@ -4,7 +4,7 @@ namespace LedgerAndField.Api.Dtos;
 
 public static class Mapper
 {
-    public static object Workspace(Workspace w) => new { w.Id, w.Name, w.Plan, w.CreatedAt };
+    public static object Workspace(Workspace w) => new { w.Id, w.Name, w.Plan, perspective = w.Perspective ?? "vendor", w.CreatedAt };
     public static object Company(Workspace w) => Workspace(w);
 
     public static object ProjectList(Project p) => new
@@ -14,6 +14,7 @@ public static class Mapper
         client = p.ClientName,
         value = p.ScopeValue,
         p.Currency,
+        perspective = p.Perspective ?? "vendor",
         start = p.StartDate,
         end = p.EndDate,
         p.Status,
@@ -30,6 +31,7 @@ public static class Mapper
         client = p.ClientName,
         value = p.ScopeValue,
         p.Currency,
+        perspective = p.Perspective ?? "vendor",
         start = p.StartDate,
         end = p.EndDate,
         p.Status,

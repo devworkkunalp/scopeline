@@ -1,0 +1,34 @@
+================================================================================
+STATEMENT OF WORK (SOW) — COMMERCIAL AGREEMENT
+================================================================================
+PROJECT NAME:      Acme Corp E-Commerce Modernization
+SERVICE PROVIDER:  Apex Digital Studio ("Agency")
+CLIENT:            Acme Corporation ("Client")
+TOTAL CONTRACT SUM: $150,000 USD (Fixed-Price Milestone)
+HOURLY VARIATION:  $150.00 USD / Hour
+EFFECTIVE DATE:    January 15, 2026
+
+1.0 BASELINE SCOPE & INCLUDED DELIVERABLES:
+1.1 Front-End Storefront: Next.js responsive e-commerce web application.
+1.2 Catalog & Search: Product catalog, category navigation, multi-attribute filter (brand, size, color, price).
+1.3 Single-Currency Checkout: Standard single-currency USD credit card payment flow via Stripe Payment Element.
+1.4 Device Compatibility: Full responsive layout support across modern desktop, tablet (iPad), and mobile viewports.
+1.5 Delivery Schedule: 16-week delivery timeline concluding May 15, 2026.
+
+2.0 EXCLUSIONS & OUT-OF-SCOPE BOUNDARIES:
+2.1 Multi-currency conversion, local geo-pricing, and dynamic exchange rate feeds.
+2.2 Recurring subscription billing logic or customer subscription management portals.
+2.3 Native mobile apps (iOS App Store / Google Play).
+2.4 Design revisions exceeding two (2) review cycles per milestone.
+2.5 Legacy database data migration exceeding 5,000 records.
+
+3.0 CHANGE ORDER & VARIATION PROCESS:
+3.1 Any request by Client for deliverables falling under Section 2.0 or not explicitly defined in Section 1.0 requires a written Change Request approved by both parties.
+3.2 Standard Variation Rate: $150.00/hour.
+3.3 Accelerated Rush Delivery: Any schedule compression requested with less than 10 calendar days notice is billable at 1.5x ($225.00/hour).
+
+4.0 PAYMENT TERMS:
+Milestone 1 (25% — $37,500): Architecture & Design Sign-off (Net 15 days).
+Milestone 2 (50% — $75,000): Core Storefront & Checkout Integration (Net 15 days).
+Milestone 3 (25% — $37,500): Final UAT & Production Launch (Net 15 days).
+================================================================================

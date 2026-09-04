@@ -1,0 +1,14 @@
+Date: March 18, 2026 02:15 PM
+From: Sarah Jenkins <sarah.j@acmecorp.com>
+To: Alex Henderson <alex@apexdigital.io>
+Subject: Layout issue on iPad Mini viewport in product category page
+
+Hi Alex,
+
+During our QA testing today, we noticed that on iPad Mini in portrait mode, the filter sidebar overlaps with the product grid images.
+
+Can your frontend engineers adjust the CSS breakpoints so the category layout flows properly on tablet screens?
+
+Thanks,
+Sarah Jenkins
+QA Lead, Acme Corp

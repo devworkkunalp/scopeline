@@ -1,0 +1,16 @@
+Date: March 12, 2026 10:45 AM
+From: Dave Miller <dave.miller@acmecorp.com>
+To: Alex Henderson <alex@apexdigital.io>
+Subject: European Expansion & Stripe Multi-Currency / Subscriptions Request
+
+Hi Alex,
+
+Our executive board just greenlit our UK and EU market expansion for next quarter! 
+
+We need the checkout flow to dynamically detect user IP location and allow customers to pay in EUR (€) and GBP (£) alongside USD. In addition, we want customers to be able to sign up for a monthly recurring VIP Club subscription ($19.99/mo) right inside checkout.
+
+Can you have your team implement the multi-currency exchange rate tables and Stripe recurring subscription billing logic in this sprint?
+
+Thanks,
+Dave Miller
+VP of Product, Acme Corp

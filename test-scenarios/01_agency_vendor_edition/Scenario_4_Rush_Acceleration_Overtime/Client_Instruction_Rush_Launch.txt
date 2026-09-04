@@ -1,0 +1,15 @@
+Date: April 02, 2026 04:30 PM
+From: Dave Miller <dave.miller@acmecorp.com>
+To: Alex Henderson <alex@apexdigital.io>
+Subject: URGENT: Move live launch date up by 2 weeks (Rush Deployment)
+
+Alex,
+
+Our CMO just scheduled a major national press announcement for April 20th. We cannot wait for our original May 15th delivery schedule.
+
+We need your team to put on a weekend crew, work overtime, and accelerate final deployment by 2.5 weeks so we are live before April 20th.
+
+Please confirm immediately and have the engineers work this weekend.
+
+Dave Miller
+VP of Product, Acme Corp

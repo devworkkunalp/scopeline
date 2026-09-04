@@ -3,8 +3,8 @@ import { api, setToken, setUser } from '../api.js';
 
 export default function LoginPage({ onAuth }) {
   const [mode, setMode]       = useState('login'); // 'login' | 'register'
-  const [email, setEmail]     = useState('demo@ledgerandfield.local');
-  const [password, setPass]   = useState('Demo123!');
+  const [email, setEmail]     = useState('');
+  const [password, setPass]   = useState('');
   const [company, setCompany] = useState('');
   const [name, setName]       = useState('');
   const [err, setErr]         = useState('');
@@ -38,9 +38,9 @@ export default function LoginPage({ onAuth }) {
           <div className="brand" style={{ padding: 0, border: 'none', marginBottom: 6 }}>
             <div className="mark">
               <div className="swatch" />
-              <h1 style={{ fontSize: 18 }}>LEDGER&amp;FIELD</h1>
+              <h1 style={{ fontSize: 18 }}>SCOPELINE</h1>
             </div>
-            <div className="tag" style={{ marginTop: 4 }}>REVENUE RECOVERY — MVP</div>
+            <div className="tag" style={{ marginTop: 4 }}>SCOPE &amp; REVENUE DEFENSE</div>
           </div>
         </div>
 
@@ -71,11 +71,6 @@ export default function LoginPage({ onAuth }) {
             <label className="field-label">Password</label>
             <input type="password" value={password} onChange={e => setPass(e.target.value)} required />
           </div>
-          {mode === 'login' && (
-            <p style={{ fontSize: 11.5, color: 'var(--steel)', marginBottom: 14, fontFamily: "'IBM Plex Mono', monospace" }}>
-              Demo: demo@ledgerandfield.local / Demo123!
-            </p>
-          )}
           <button type="submit" className="btn orange w-100" disabled={busy} style={{ width: '100%', justifyContent: 'center' }}>
             {busy ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>

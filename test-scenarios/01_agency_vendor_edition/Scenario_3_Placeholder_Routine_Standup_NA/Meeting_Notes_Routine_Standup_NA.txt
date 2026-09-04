@@ -1,0 +1,11 @@
+MEETING MINUTES OF MEETING (MOM)
+Date: March 24, 2026
+Meeting Title: Weekly Engineering Standup & Sprint Sync
+Attendees: Alex Henderson (Apex), Kunal Patil (Client Lead), Team Leads
+
+Discussion Notes:
+- Sprint 4 on track.
+- Team completed catalog category indexing.
+- New scope items requested: NA
+- Blockers / Decisions: None
+- Action Items: Continue planned Sprint 4 sprint backlog tasks as scheduled.

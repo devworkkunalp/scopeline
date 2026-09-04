@@ -1,0 +1,17 @@
+CHANGE REQUEST SUBMISSION
+Date: March 15, 2026
+From: Marcus Vance <m.vance@devconsulting.com> (Project Director, DevConsulting)
+To: Kunal Patil <kunal@nexusventures.io> (Founder, Nexus Ventures)
+Subject: Change Order #04 — Faceted Category Filter Implementation (+$3,500.00)
+
+Dear Kunal,
+
+During our sprint review, you requested that users be able to filter search results by category, brand, and pricing facets simultaneously.
+
+Because dynamic multi-attribute filtering requires complex database query indexing, we have prepared Change Order #04 for an additional $3,500.00 (23.3 engineering hours @ $150/hr).
+
+Please sign and return the attached Change Order so our team can commence work on this module.
+
+Regards,
+Marcus Vance
+DevConsulting Global Ltd.

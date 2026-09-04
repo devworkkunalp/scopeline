@@ -119,15 +119,17 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
     setTimeout(() => setCopiedEmail(false), 2500);
   }
 
+  const isClient = (activeProject?.perspective ?? '').toLowerCase() === 'client';
+
   return (
     <div className="modal-backdrop open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 760 }}>
         <div className="modal-head">
           <div>
-            <div style={{ fontSize: 10.5, letterSpacing: '0.08em', color: 'var(--orange)', textTransform: 'uppercase', fontWeight: 600 }}>
-              Privacy-First Informal Ingestion
+            <div style={{ fontSize: 10.5, letterSpacing: '0.08em', color: isClient ? '#2563EB' : 'var(--orange)', textTransform: 'uppercase', fontWeight: 600 }}>
+              {isClient ? '🛡️ Vendor Overbilling & Scope Shield' : 'Privacy-First Informal Ingestion'}
             </div>
-            <h3>Log Post-Meeting MOM / Email Drop-In</h3>
+            <h3>{isClient ? 'Log Vendor Correspondence / Audit Claim' : 'Log Post-Meeting MOM / Email Drop-In'}</h3>
           </div>
           <button onClick={onClose} aria-label="Close">&times;</button>
         </div>
@@ -139,14 +141,14 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
             className={`tab-item ${tab === 'mom' ? 'active' : ''}`}
             onClick={() => { setTab('mom'); setVerdict(null); setErr(''); }}
           >
-            📝 Post-Meeting MOM
+            {isClient ? '📝 Meeting MOM' : '📝 Post-Meeting MOM'}
           </button>
           <button
             type="button"
             className={`tab-item ${tab === 'email' ? 'active' : ''}`}
             onClick={() => { setTab('email'); setVerdict(null); setErr(''); }}
           >
-            ✉️ Email Drop-In / Forward
+            {isClient ? '✉️ Vendor Email / Claim' : '✉️ Email Drop-In / Forward'}
           </button>
           <button
             type="button"
@@ -164,7 +166,7 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
           {tab === 'mom' && (
             <>
               <div style={{ background: '#F8FAFC', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 4, marginBottom: 16, fontSize: 12.5, color: 'var(--steel)' }}>
-                <strong>Rule-Based MOM Guideline:</strong> Enter the client decision maker and action items from your meeting notes. The AI will cross-reference the ask against SOW boundaries.
+                <strong>{isClient ? 'Audit MOM Guideline:' : 'Rule-Based MOM Guideline:'}</strong> {isClient ? 'Enter meeting notes to cross-reference vendor promises against SOW deliverable boundaries.' : 'Enter client decision maker and action items from your meeting notes. The AI will cross-reference the ask against SOW boundaries.'}
               </div>
 
               <div className="grid cols-2">
@@ -174,7 +176,7 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                     type="text"
                     value={meetingTitle}
                     onChange={(e) => setMeetingTitle(e.target.value)}
-                    placeholder="e.g. Sprint 3 Demo & Review"
+                    placeholder={isClient ? 'e.g. Vendor Sprint 4 Status Review' : 'e.g. Sprint 3 Demo & Review'}
                   />
                 </div>
                 <div className="field">
@@ -188,22 +190,22 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
               </div>
 
               <div className="field">
-                <label className="field-label">Client Stakeholder / Requester *</label>
+                <label className="field-label">{isClient ? 'Vendor Lead / Project Director *' : 'Client Stakeholder / Requester *'}</label>
                 <input
                   type="text"
                   value={stakeholder}
                   onChange={(e) => setStakeholder(e.target.value)}
-                  placeholder="e.g. Dave Miller (VP Product, Acme Corp)"
+                  placeholder={isClient ? 'e.g. Marcus Vance (DevConsulting Global)' : 'e.g. Dave Miller (VP Product, Acme Corp)'}
                 />
               </div>
 
               <div className="field">
-                <label className="field-label">Requested Feature / Client Ask Summary *</label>
+                <label className="field-label">{isClient ? 'Vendor Claim / Discussed Requirement *' : 'Requested Feature / Client Ask Summary *'}</label>
                 <textarea
                   rows={2}
                   value={askSummary}
                   onChange={(e) => setAskSummary(e.target.value)}
-                  placeholder="e.g. Client requested enabling multi-currency EUR/GBP tax calculations and Recharge recurring subscriptions before launch."
+                  placeholder={isClient ? 'e.g. Vendor claims faceted search filtering requires +$3,500 extra change order...' : 'e.g. Client requested multi-currency pricing and Stripe recurring subscription billing logic...'}
                 />
               </div>
 
@@ -213,7 +215,7 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                   rows={3}
                   value={momRaw}
                   onChange={(e) => setMomRaw(e.target.value)}
-                  placeholder="* Reviewed checkout flow. Dave requested subscriptions support. Marcus noted design effort."
+                  placeholder="Paste verbatim notes from Google Docs / Notion / Confluence..."
                 />
               </div>
             </>
@@ -239,12 +241,12 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
 
               <div className="grid cols-2">
                 <div className="field">
-                  <label className="field-label">Client Sender *</label>
+                  <label className="field-label">{isClient ? 'Vendor Sender Email *' : 'Client Sender *'}</label>
                   <input
                     type="text"
                     value={emailSender}
                     onChange={(e) => setEmailSender(e.target.value)}
-                    placeholder="e.g. Dave Miller <dave@acmeproducts.com>"
+                    placeholder={isClient ? 'e.g. Marcus Vance <m.vance@devconsulting.com>' : 'e.g. Dave Miller <dave@acmeproducts.com>'}
                   />
                 </div>
                 <div className="field">
@@ -253,7 +255,7 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                     type="text"
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
-                    placeholder="e.g. Re: Urgent request for international tax & subscriptions"
+                    placeholder={isClient ? 'e.g. Change Order #04 — Faceted Category Filter (+$3,500)' : 'e.g. Re: Urgent request for international tax & subscriptions'}
                   />
                 </div>
               </div>
@@ -288,12 +290,12 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                   />
                 </div>
                 <div className="field">
-                  <label className="field-label">Client Requester</label>
+                  <label className="field-label">{isClient ? 'Vendor Author' : 'Client Requester'}</label>
                   <input
                     type="text"
                     value={chatAuthor}
                     onChange={(e) => setChatAuthor(e.target.value)}
-                    placeholder="e.g. Dave Miller (VP)"
+                    placeholder={isClient ? 'e.g. Marcus Vance' : 'e.g. Dave Miller (VP)'}
                   />
                 </div>
               </div>
@@ -313,7 +315,7 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
           {/* Commercials Grid */}
           <div className="grid cols-2" style={{ marginTop: 8 }}>
             <div className="field">
-              <label className="field-label">Estimated Engineering / Design Hours</label>
+              <label className="field-label">{isClient ? 'Vendor Claimed Engineering Hours' : 'Estimated Engineering / Design Hours'}</label>
               <input
                 type="number"
                 min="1"
@@ -340,15 +342,15 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                 className="btn"
                 disabled={evaluating}
                 onClick={handleEvaluate}
-                style={{ minWidth: 260 }}
+                style={{ minWidth: 260, background: isClient ? '#2563EB' : undefined, borderColor: isClient ? '#2563EB' : undefined, color: '#fff' }}
               >
                 {evaluating ? (
                   <>
                     <span className="spinner" style={{ width: 14, height: 14, marginRight: 8 }} />
-                    Cross-Checking SOW Baseline…
+                    {isClient ? 'Cross-Auditing Baseline SOW Contract…' : 'Cross-Checking SOW Baseline…'}
                   </>
                 ) : (
-                  '⚡ Verify Scope & Build Proof Package'
+                  isClient ? '🛡️ Audit Claim Against Baseline SOW' : '⚡ Verify Scope & Build Proof Package'
                 )}
               </button>
             </div>
@@ -359,10 +361,10 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
             <div style={{ marginTop: 20, borderTop: '2px solid var(--border)', paddingTop: 16 }}>
               {/* 4-Point Rule Audit Badge Bar */}
               <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '10px 14px', borderRadius: 4, marginBottom: 16, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#065F46' }}>
-                <span style={{ fontWeight: 600 }}>✓ Client Requester Identified</span>
+                <span style={{ fontWeight: 600 }}>✓ {isClient ? 'Vendor Sender Identified' : 'Client Requester Identified'}</span>
                 <span style={{ fontWeight: 600 }}>✓ Timeline After SOW Execution</span>
                 <span style={{ fontWeight: 600 }}>✓ SOW Clause Boundary Verified</span>
-                <span style={{ fontWeight: 600 }}>✓ Rate Calculation Grounded ($150/hr)</span>
+                <span style={{ fontWeight: 600 }}>✓ Rate Calculation Grounded (${rate}/hr)</span>
               </div>
 
               {/* Status Banner */}
@@ -370,8 +372,14 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                 style={{
                   padding: '12px 16px',
                   borderRadius: 4,
-                  background: verdict.isOutOfScope ? '#FFF3E0' : '#E8F5E9',
-                  border: `1px solid ${verdict.isOutOfScope ? 'var(--orange)' : 'var(--green)'}`,
+                  background: isClient
+                    ? (verdict.isOverbilling ? '#FEF2F2' : '#F0FDF4')
+                    : (verdict.isOutOfScope ? '#FFF3E0' : '#E8F5E9'),
+                  border: `1.5px solid ${
+                    isClient
+                      ? (verdict.isOverbilling ? '#EF4444' : '#22C55E')
+                      : (verdict.isOutOfScope ? 'var(--orange)' : 'var(--green)')
+                  }`,
                   marginBottom: 16,
                 }}
               >
@@ -381,10 +389,14 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
                       fontWeight: 700,
                       fontSize: 13,
                       textTransform: 'uppercase',
-                      color: verdict.isOutOfScope ? 'var(--orange)' : 'var(--green)',
+                      color: isClient
+                        ? (verdict.isOverbilling ? '#DC2626' : '#15803D')
+                        : (verdict.isOutOfScope ? 'var(--orange)' : 'var(--green)'),
                     }}
                   >
-                    {verdict.isOutOfScope ? '⚡ OUT OF SCOPE (BILLABLE REVENUE DETECTED)' : '✓ COVERED IN BASE SOW AGREEMENT'}
+                    {isClient
+                      ? (verdict.isOverbilling ? '🛡️ VENDOR OVERBILLING DETECTED — CHALLENGE CLAIM' : '✓ VALIDATED OUT-OF-SCOPE VARIATION')
+                      : (verdict.isOutOfScope ? '⚡ OUT OF SCOPE (BILLABLE REVENUE DETECTED)' : '✓ COVERED IN BASE SOW AGREEMENT')}
                   </span>
                   <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: 'var(--navy)' }}>
                     Confidence: {Math.round((verdict.confidence || 0.9) * 100)}%
@@ -399,10 +411,10 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
               <div className="grid cols-3" style={{ gap: 12, marginBottom: 16 }}>
                 <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', padding: 12, borderRadius: 4 }}>
                   <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--steel)', fontWeight: 600, marginBottom: 4 }}>
-                    1. The Informal Request
+                    1. The Request Content
                   </div>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--navy)' }}>
-                    {stakeholder || emailSender || chatAuthor || 'Client Stakeholder'}
+                    {stakeholder || emailSender || chatAuthor || (isClient ? 'Vendor Lead' : 'Stakeholder')}
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--steel)', marginTop: 4 }}>
                     {askSummary || emailSubject || chatSnippet}
@@ -411,48 +423,97 @@ export default function MomLoggerModal({ activeProject, onClose, onAdded }) {
 
                 <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', padding: 12, borderRadius: 4 }}>
                   <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--steel)', fontWeight: 600, marginBottom: 4 }}>
-                    2. SOW Barrier Clause
+                    2. SOW Clause Grounding
                   </div>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--navy)' }}>
-                    {verdict.clause || '§2 Exclusions'}
+                    {verdict.clause || (isClient ? '§1.2 Contract Deliverables' : '§1.0 Baseline Scope')}
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--steel)', marginTop: 4 }}>
-                    {verdict.citation || 'Excluded deliverable requiring formal Change Request.'}
+                    {isClient
+                      ? (verdict.isOverbilling ? 'Deliverable already paid for under base contract.' : 'Legitimate out-of-scope work under SOW exclusions.')
+                      : (verdict.isOutOfScope ? 'Excluded deliverable requiring formal Change Request.' : 'Covered within standard contracted deliverables.')}
                   </div>
                 </div>
 
                 <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', padding: 12, borderRadius: 4 }}>
                   <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--steel)', fontWeight: 600, marginBottom: 4 }}>
-                    3. Financial Proof
+                    3. {isClient ? 'Budget Impact' : 'Commercial Impact'}
                   </div>
-                  <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: 'var(--orange)' }}>
+                  <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: isClient ? (verdict.isOverbilling ? '#DC2626' : '#2563EB') : (verdict.isOutOfScope ? 'var(--orange)' : 'var(--green)') }}>
                     {fmt(verdict.billableValue || (parseFloat(hours) * parseFloat(rate)))}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--steel)', marginTop: 4 }}>
-                    {hours} hrs × ${rate}/hr rate
+                    {isClient
+                      ? (verdict.isOverbilling ? 'Overbilling Defended & Saved' : 'Authorized Variation Sum')
+                      : (verdict.isOutOfScope ? `${hours} hrs × $${rate}/hr rate` : 'Included in base contract ($0)')}
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  disabled={saving}
-                  onClick={() => handleSave(false)}
-                >
-                  Save as Scope Opportunity
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={saving}
-                  onClick={() => handleSave(true)}
-                  style={{ background: 'var(--orange)', borderColor: 'var(--orange)' }}
-                >
-                  {saving ? 'Generating…' : '⚡ Generate Change Request with Proof →'}
-                </button>
+                {isClient ? (
+                  verdict.isOverbilling ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        disabled={saving}
+                        onClick={() => handleSave(false)}
+                      >
+                        Save as Audited Claim
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={saving}
+                        onClick={() => handleSave(false)}
+                        style={{ background: '#DC2626', borderColor: '#DC2626', color: '#fff' }}
+                      >
+                        🛡️ Dispute Claim with SOW Defense Proof →
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={saving}
+                      onClick={() => handleSave(true)}
+                      style={{ background: '#2563EB', borderColor: '#2563EB', color: '#fff' }}
+                    >
+                      ✓ Approve Valid Variation (${fmt(verdict.billableValue)})
+                    </button>
+                  )
+                ) : verdict.isOutOfScope ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      disabled={saving}
+                      onClick={() => handleSave(false)}
+                    >
+                      Save as Scope Opportunity
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={saving}
+                      onClick={() => handleSave(true)}
+                      style={{ background: 'var(--orange)', borderColor: 'var(--orange)' }}
+                    >
+                      {saving ? 'Generating…' : '⚡ Generate Change Request with Proof →'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={onClose}
+                    style={{ background: 'var(--green)', borderColor: 'var(--green)', color: '#fff' }}
+                  >
+                    ✓ Acknowledged (No Change Request Required)
+                  </button>
+                )}
               </div>
             </div>
           )}

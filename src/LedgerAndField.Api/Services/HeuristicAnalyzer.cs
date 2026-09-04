@@ -157,6 +157,60 @@ public class HeuristicAnalyzer
         return $"Based on the SOW and {opps.Count} detected opportunities for {project.Name} (Client: {project.ClientName}):\n• Total Project Value: {project.ScopeValue:C0}\n• Recoverable Unbilled Exposure: {opps.Sum(o => o.BillableValue - o.InvoicedValue):C0}\n\nTry asking about unbilled work, change requests, evidence sources, or SOW exclusions.";
     }
 
+    public (string subject, string body, string clauseRef, string verdict, decimal defendedAmount) GenerateDefenseLetter(Project project, Opportunity opp, string? vendorName, string? customNotes)
+    {
+        var vendor = !string.IsNullOrWhiteSpace(vendorName) ? vendorName.Trim() : (project.Perspective == "client" ? project.ClientName : "Vendor Delivery Team");
+        var contract = project.Contract;
+        var sowRef = opp.Clause ?? (contract?.OriginalScope != null ? "§1.0 Baseline Scope of Deliverables" : "Executed Contract Agreement");
+        
+        var isExclusion = (opp.Clause ?? "").Contains("Exclusion", StringComparison.OrdinalIgnoreCase) || (opp.Clause ?? "").Contains("§2", StringComparison.OrdinalIgnoreCase);
+        var verdict = isExclusion ? "VALIDATED_VARIATION" : "CHALLENGE_OVERBILLING";
+        var amount = opp.BillableValue;
+
+        var subject = $"Scope Boundary & SOW Review: {opp.Title} [Ref: {project.Name}]";
+        
+        string body;
+        if (verdict == "CHALLENGE_OVERBILLING")
+        {
+            body = $"""
+                Dear {vendor},
+
+                Thank you for submitting the change request regarding "{opp.Title}" for the proposed amount of {amount:C0}.
+
+                Upon cross-referencing our executed Statement of Work (SOW) agreement for "{project.Name}" (Total Contract Sum: {project.ScopeValue:C0}), we have determined that this deliverable is already covered under our contracted baseline obligations:
+                → Governing Reference: {sowRef}
+
+                Contract Scope Extract:
+                "{(contract?.OriginalScope != null ? Truncate(contract.OriginalScope, 250) : opp.Description)}"
+
+                As this functionality is integral to the agreed baseline deliverables, it does not constitute an additional billable variation.
+
+                {(string.IsNullOrWhiteSpace(customNotes) ? "" : $"Additional Context:\n{customNotes}\n\n")}Please continue implementation in accordance with the established project delivery timeline. If you believe specific third-party integration fees apply that fall strictly outside §1.0, please provide an itemized justification citing the relevant contract exclusion.
+
+                Best regards,
+                {project.ClientName} Project Management Team
+                """;
+        }
+        else
+        {
+            body = $"""
+                Dear {vendor},
+
+                We have reviewed the change request for "{opp.Title}" ({amount:C0}).
+
+                Our contract analysis confirms this item qualifies as an out-of-scope variation under:
+                → Governing Reference: {sowRef}
+
+                The proposed pricing aligns with the agreed contractual variation terms. We approve proceeding with this scope addition under Change Order #{opp.ChangeRequest?.Number ?? "CR-Draft"}.
+
+                Best regards,
+                {project.ClientName} Project Management Team
+                """;
+        }
+
+        return (subject, body, sowRef, verdict, amount);
+    }
+
     private static (string type, double confidence)? Classify(string sentence)
     {
         var s = sentence.ToLowerInvariant();

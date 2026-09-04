@@ -90,7 +90,9 @@ using (var scope = app.Services.CreateScope())
     {
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN IF NOT EXISTS \"PhoneNumber\" text DEFAULT '';");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Workspaces\" ADD COLUMN IF NOT EXISTS \"TrialEndsAt\" timestamp with time zone DEFAULT NOW() + interval '30 days';");
-        Console.WriteLine("[DB INIT] Column migrations (PhoneNumber, TrialEndsAt) verified successfully.");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Workspaces\" ADD COLUMN IF NOT EXISTS \"Perspective\" text DEFAULT 'vendor';");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Projects\" ADD COLUMN IF NOT EXISTS \"Perspective\" text DEFAULT 'vendor';");
+        Console.WriteLine("[DB INIT] Column migrations (PhoneNumber, TrialEndsAt, Perspective) verified successfully.");
     }
     catch (Exception ex)
     {

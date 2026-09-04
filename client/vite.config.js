@@ -5,6 +5,11 @@ const backend = 'http://localhost:5288'
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+    setupFiles: './src/test/setup.js',
+  },
   server: {
     port: 5173,
     proxy: {

@@ -44,6 +44,7 @@ public class ProjectsController(
             ClientName = req.ClientName.Trim(),
             ScopeValue = req.ScopeValue,
             Currency = string.IsNullOrWhiteSpace(req.Currency) ? "USD" : req.Currency,
+            Perspective = string.IsNullOrWhiteSpace(req.Perspective) ? "vendor" : req.Perspective.Trim().ToLowerInvariant(),
             StartDate = req.StartDate,
             EndDate = req.EndDate,
             Status = "Active",
@@ -78,10 +79,28 @@ public class ProjectsController(
         if (req.StartDate != null) p.StartDate = req.StartDate;
         if (req.EndDate != null) p.EndDate = req.EndDate;
         if (req.Status != null) p.Status = req.Status;
+        if (req.Perspective != null) p.Perspective = req.Perspective.Trim().ToLowerInvariant();
 
         await db.SaveChangesAsync();
         var full = await Load(id);
         return Ok(Mapper.ProjectDetail(full!));
+    }
+
+    [HttpPost("projects/{id:guid}/opportunities/{oppId:guid}/defense-letter")]
+    [HttpPost("api/projects/{id:guid}/opportunities/{oppId:guid}/defense-letter")]
+    public async Task<IActionResult> GenerateDefenseLetter(Guid id, Guid oppId, DefenseLetterRequest req, [FromServices] HeuristicAnalyzer analyzer)
+    {
+        var p = await Mine()
+            .Include(x => x.Contract)
+            .Include(x => x.Opportunities).ThenInclude(o => o.ChangeRequest)
+            .FirstOrDefaultAsync(x => x.Id == id);
+        if (p is null) return NotFound("Project not found");
+
+        var opp = p.Opportunities.FirstOrDefault(o => o.Id == oppId);
+        if (opp is null) return NotFound("Opportunity not found");
+
+        var (subject, body, sowRef, verdict, amt) = analyzer.GenerateDefenseLetter(p, opp, req?.VendorName, req?.CustomNotes);
+        return Ok(new DefenseLetterResponse(subject, body, sowRef, verdict, amt));
     }
 
     [HttpGet("projects/{id:guid}/contract")]
@@ -382,6 +401,31 @@ public class ProjectsController(
         return Ok(Mapper.Invoice(inv));
     }
 
+    [HttpPatch("projects/{id:guid}/invoices/{invoiceId:guid}")]
+    [HttpPatch("api/projects/{id:guid}/invoices/{invoiceId:guid}")]
+    public async Task<IActionResult> UpdateInvoice(Guid id, Guid invoiceId, [FromBody] InvoiceCreateRequest req)
+    {
+        var inv = await db.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId && i.ProjectId == id && i.Project.WorkspaceId == WorkspaceId);
+        if (inv is null) return NotFound();
+        if (req.Amount > 0) inv.Amount = req.Amount;
+        if (req.Collected >= 0) inv.Collected = req.Collected;
+        if (!string.IsNullOrWhiteSpace(req.Number)) inv.Number = req.Number;
+        if (!string.IsNullOrWhiteSpace(req.RelatedChangeOrder)) inv.RelatedChangeOrder = req.RelatedChangeOrder;
+        await db.SaveChangesAsync();
+        return Ok(Mapper.Invoice(inv));
+    }
+
+    [HttpDelete("projects/{id:guid}/invoices/{invoiceId:guid}")]
+    [HttpDelete("api/projects/{id:guid}/invoices/{invoiceId:guid}")]
+    public async Task<IActionResult> DeleteInvoice(Guid id, Guid invoiceId)
+    {
+        var inv = await db.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId && i.ProjectId == id && i.Project.WorkspaceId == WorkspaceId);
+        if (inv is null) return NotFound();
+        db.Invoices.Remove(inv);
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpGet("projects/{id:guid}/invoicing/summary")]
     [HttpGet("api/projects/{id:guid}/invoicing/summary")]
     public async Task<IActionResult> InvoicingSummary(Guid id)
@@ -470,45 +514,116 @@ public class ProjectsController(
         var calcCost = estHours * hourly * 0.7m;
         var calcBillable = estHours * hourly;
 
+        var cleanTitle = (req.Title ?? "").Trim();
+        var cleanDesc = (req.Description ?? "").Trim();
+        var combined = $"{cleanTitle} {cleanDesc}".ToLowerInvariant();
+
+        // Detect placeholder / negative cases / trivial inputs like "NA", "N/A", "none", "nil", "nothing", etc.
+        var isTrivial = cleanTitle.Length < 4 || 
+            new[] { "na", "n/a", "none", "nil", "nothing", "no changes", "no change", "all good", "as is", "null" }
+            .Any(token => cleanTitle.Equals(token, StringComparison.OrdinalIgnoreCase) || 
+                          cleanDesc.Equals(token, StringComparison.OrdinalIgnoreCase) ||
+                          combined.Contains($"ask / decision:\n{token}") ||
+                          combined.Contains($"ask / decision:\r\n{token}"));
+
+        if (isTrivial)
+        {
+            return Ok(new
+            {
+                verdict = "IN_SCOPE",
+                type = "No Scope Change",
+                clause = "§1.0 Baseline Scope (Standard Delivery)",
+                reasoning = "No actionable scope addition or new requirement was detected in these notes (placeholder / standard routine update). No Change Request is warranted.",
+                estimatedCost = 0m,
+                billableValue = 0m,
+                confidence = 0.99,
+                isOutOfScope = false,
+                title = req.Title,
+                description = req.Description,
+                source = req.Source ?? "Routine Meeting Standup"
+            });
+        }
+
+        var isClient = (p.Perspective ?? "").Equals("client", StringComparison.OrdinalIgnoreCase);
         var contract = p.Contract;
-        var fallbackVerdict = "OUT_OF_SCOPE";
-        var fallbackReasoning = "This requirement adds functionality not explicitly specified in the baseline Statement of Work deliverables.";
+        var fallbackVerdict = isClient ? "CHALLENGE_OVERBILLING" : "OUT_OF_SCOPE";
+        var fallbackReasoning = isClient
+            ? "The vendor's claim overlaps with baseline deliverables defined in Section 1.0 of the Statement of Work."
+            : "This requirement adds functionality not explicitly specified in the baseline Statement of Work deliverables.";
         var fallbackClause = contract?.ChangeVariationRules ?? "§3 — Change Request & Variation Process";
 
         if (ai.IsConfigured)
         {
-            var prompt = $$"""
-                Compare this incoming client request or meeting requirement against the signed Statement of Work (SOW).
-                Determine if this requirement is:
-                1. "OUT_OF_SCOPE" — Extra work, excluded item, additional design iteration, or new feature that warrants an additional billable Change Request.
-                2. "IN_SCOPE" — Already covered in the base SOW deliverables.
-                3. "AMBIGUOUS" — Needs clarification from the client.
+            var systemPrompt = isClient
+                ? "You are an expert commercial contract auditor and buyer advocate defending the client/founder against vendor overbilling and double-charging. JSON only."
+                : "You are an expert commercial project manager evaluating SOW scope boundaries for an agency/service provider. JSON only.";
 
-                Return JSON only:
-                {
-                  "verdict": "OUT_OF_SCOPE" | "IN_SCOPE" | "AMBIGUOUS",
-                  "type": "Scope Expansion" | "Excluded Deliverable" | "Extra Revision" | "Technical Integration" | "Base Deliverable",
-                  "clause": "e.g. §2 Exclusions or §3 Change Process",
-                  "reasoning": "Clear explanation citing why it is or isn't covered by SOW",
-                  "estimatedCost": {{calcCost}},
-                  "billableValue": {{calcBillable}},
-                  "confidence": 0.90
-                }
+            var prompt = isClient
+                ? $$"""
+                    Compare this incoming vendor change order claim or supplementary invoice against the signed Statement of Work (SOW).
+                    
+                    Determine if this vendor claim is:
+                    1. "CHALLENGE_OVERBILLING" — The vendor is attempting to charge for deliverables, features, bug fixes, or performance SLAs that are ALREADY INCLUDED in the baseline SOW (Section 1.0) or covered under the 90-day defect warranty (Section 5.0). E.g. Faceted category filters, search bars, responsive layout, or defect fixes.
+                    2. "VALID_VARIATION" — Legitimate new scope explicitly excluded under Section 2.0 (e.g. ERP integration).
+                    3. "AMBIGUOUS" — Needs clarification.
 
-                SOW / CONTRACT:
-                Scope: {{contract?.OriginalScope}}
-                Exclusions: {{contract?.ExclusionsAllowances}}
-                Change Rules: {{contract?.ChangeVariationRules}}
-                Terms: {{contract?.CommercialClauses}}
+                    Return JSON only:
+                    {
+                      "verdict": "CHALLENGE_OVERBILLING" | "VALID_VARIATION" | "AMBIGUOUS",
+                      "type": "Redundant Charge / Double-Billing Defense" | "Contractual Defect Warranty" | "Legitimate Excluded Variation",
+                      "clause": "Cite the exact SOW section protecting the client (e.g. §1.2 Search & Filters or §5.1 Warranty)",
+                      "reasoning": "Clear contract-grounded explanation why the client must challenge this vendor charge or approve it",
+                      "estimatedCost": {{calcCost}},
+                      "billableValue": {{calcBillable}},
+                      "confidence": 0.95
+                    }
 
-                INCOMING CLIENT ASK:
-                Title: {{req.Title}}
-                Description: {{req.Description}}
-                Source: {{req.Source}}
-                """;
-            var raw = await ai.CompleteJsonAsync(
-                "You are an expert commercial project manager evaluating SOW scope boundaries. JSON only.",
-                prompt);
+                    SOW BASELINE / VENDOR CONTRACT:
+                    Included Deliverables: {{contract?.OriginalScope}}
+                    Exclusions: {{contract?.ExclusionsAllowances}}
+                    Change Rules: {{contract?.ChangeVariationRules}}
+                    Warranty & Terms: {{contract?.CommercialClauses}}
+                    Raw Text: {{contract?.ExtractedRawText}}
+
+                    INCOMING VENDOR CLAIM:
+                    Title: {{req.Title}}
+                    Description: {{req.Description}}
+                    Source: {{req.Source}}
+                    """
+                : $$"""
+                    Compare this incoming client request or meeting requirement against the signed Statement of Work (SOW).
+                    Determine if this requirement is:
+                    1. "OUT_OF_SCOPE" — Extra work, excluded item, additional design iteration, or new feature that warrants an additional billable Change Request.
+                    2. "IN_SCOPE" — Already covered in the base SOW deliverables, standard bug fix, or routine status update with no new scope.
+                    3. "AMBIGUOUS" — Needs clarification from the client.
+
+                    If the request is blank, placeholder (NA/None), or trivial routine conversation, mark it "IN_SCOPE" with $0 billableValue.
+
+                    Return JSON only:
+                    {
+                      "verdict": "OUT_OF_SCOPE" | "IN_SCOPE" | "AMBIGUOUS",
+                      "type": "Scope Expansion" | "Excluded Deliverable" | "Extra Revision" | "Technical Integration" | "Base Deliverable" | "No Scope Change",
+                      "clause": "e.g. §2 Exclusions or §3 Change Process",
+                      "reasoning": "Clear explanation citing why it is or isn't covered by SOW",
+                      "estimatedCost": {{calcCost}},
+                      "billableValue": {{calcBillable}},
+                      "confidence": 0.90
+                    }
+
+                    SOW / CONTRACT:
+                    Scope: {{contract?.OriginalScope}}
+                    Exclusions: {{contract?.ExclusionsAllowances}}
+                    Change Rules: {{contract?.ChangeVariationRules}}
+                    Terms: {{contract?.CommercialClauses}}
+                    Raw Text: {{contract?.ExtractedRawText}}
+
+                    INCOMING CLIENT ASK:
+                    Title: {{req.Title}}
+                    Description: {{req.Description}}
+                    Source: {{req.Source}}
+                    """;
+
+            var raw = await ai.CompleteJsonAsync(systemPrompt, prompt);
             var json = OpenAiCompatibleClient.ExtractJsonObject(raw);
             if (!string.IsNullOrWhiteSpace(json))
             {
@@ -516,18 +631,25 @@ public class ProjectsController(
                 {
                     using var doc = System.Text.Json.JsonDocument.Parse(json);
                     var r = doc.RootElement;
+                    var verd = r.TryGetProperty("verdict", out var v) ? v.GetString() : fallbackVerdict;
+                    var isOut = isClient ? (verd == "CHALLENGE_OVERBILLING") : (verd == "OUT_OF_SCOPE");
+                    var billVal = r.TryGetProperty("billableValue", out var bv) && bv.TryGetDecimal(out var bvd) ? bvd : calcBillable;
+                    var estC = r.TryGetProperty("estimatedCost", out var ec) && ec.TryGetDecimal(out var ecd) ? ecd : calcCost;
+
                     return Ok(new
                     {
-                        verdict = r.TryGetProperty("verdict", out var v) ? v.GetString() : fallbackVerdict,
-                        type = r.TryGetProperty("type", out var t) ? t.GetString() : "Scope Expansion",
+                        verdict = verd,
+                        isOutOfScope = !isClient && isOut,
+                        isOverbilling = isClient && (verd == "CHALLENGE_OVERBILLING"),
+                        type = r.TryGetProperty("type", out var t) ? t.GetString() : (isClient ? "Redundant Charge / Double-Billing Defense" : (isOut ? "Scope Expansion" : "Base Deliverable")),
                         clause = r.TryGetProperty("clause", out var c) ? c.GetString() : fallbackClause,
                         reasoning = r.TryGetProperty("reasoning", out var rs) ? rs.GetString() : fallbackReasoning,
-                        estimatedCost = r.TryGetProperty("estimatedCost", out var ec) && ec.TryGetDecimal(out var ecd) ? ecd : calcCost,
-                        billableValue = r.TryGetProperty("billableValue", out var bv) && bv.TryGetDecimal(out var bvd) ? bvd : calcBillable,
-                        confidence = r.TryGetProperty("confidence", out var cf) && cf.TryGetDouble(out var cfd) ? cfd : 0.88,
+                        estimatedCost = estC,
+                        billableValue = billVal,
+                        confidence = r.TryGetProperty("confidence", out var cf) && cf.TryGetDouble(out var cfd) ? cfd : 0.92,
                         title = req.Title,
                         description = req.Description,
-                        source = req.Source ?? "Manual entry / client discussion"
+                        source = req.Source ?? "Vendor claim correspondence"
                     });
                 }
                 catch { }
@@ -537,15 +659,17 @@ public class ProjectsController(
         return Ok(new
         {
             verdict = fallbackVerdict,
-            type = "Scope Expansion",
+            isOutOfScope = !isClient,
+            isOverbilling = isClient,
+            type = isClient ? "Redundant Charge / Double-Billing Defense" : "Scope Expansion",
             clause = fallbackClause,
             reasoning = fallbackReasoning,
             estimatedCost = calcCost,
             billableValue = calcBillable,
-            confidence = 0.85,
+            confidence = 0.88,
             title = req.Title,
             description = req.Description,
-            source = req.Source ?? "Manual entry / client discussion"
+            source = req.Source ?? "Vendor claim correspondence"
         });
     }
 

@@ -72,22 +72,26 @@ export const api = {
   checkScope:           (projectId, body) => request(`/projects/${projectId}/check-scope`, { method: "POST", body: JSON.stringify(body) }),
   addManualOpportunity:(projectId, body) => request(`/projects/${projectId}/manual-opportunity`, { method: "POST", body: JSON.stringify(body) }),
 
-  // Opportunities
+  // Opportunities & Defense
   opportunities: (projectId, status) => request(`/projects/${projectId}/opportunities${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   opportunity:   (id)                => request(`/opportunities/${id}`),
   patchOpp:      (id, body)          => request(`/opportunities/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   setStatus:     (id, status, reason)=> request(`/opportunities/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, reason }) }),
   generateCo:    (id)                => request(`/opportunities/${id}/change-request`, { method: "POST" }),
+  generateDefenseLetter:(projectId, oppId, body) => request(`/projects/${projectId}/opportunities/${oppId}/defense-letter`, { method: "POST", body: JSON.stringify(body || {}) }),
   reconcilePayment:(id, body)        => request(`/opportunities/${id}/reconcile`, { method: "POST", body: JSON.stringify(body) }),
 
   // Change Requests
   changeRequests: (projectId)  => request(`/projects/${projectId}/change-requests`),
   patchCo:        (id, body)   => request(`/change-requests/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  coExport:       (id)         => request(`/change-requests/${id}/export`),
   coPdfUrl:       (id)         => `/change-requests/${id}/export`,
 
   // Invoicing
   invoices:         (projectId) => request(`/projects/${projectId}/invoices`),
   addInvoice:       (projectId, body) => request(`/projects/${projectId}/invoices`, { method: "POST", body: JSON.stringify(body) }),
+  patchInvoice:     (projectId, invoiceId, body) => request(`/projects/${projectId}/invoices/${invoiceId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteInvoice:    (projectId, invoiceId) => request(`/projects/${projectId}/invoices/${invoiceId}`, { method: "DELETE" }),
   invoicingSummary: (projectId) => request(`/projects/${projectId}/invoicing/summary`),
 
   // Dashboard

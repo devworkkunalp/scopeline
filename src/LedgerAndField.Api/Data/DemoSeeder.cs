@@ -8,43 +8,99 @@ public static class DemoSeeder
 {
     public static async Task SeedAsync(AppDbContext db)
     {
-        if (await db.Users.AnyAsync()) return;
-
         var hasher = new PasswordHasher<User>();
-        var workspaceId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var workspace = new Workspace
-        {
-            Id = workspaceId,
-            Name = "Nimbus Digital",
-            Plan = "Team Plan · Trial"
-        };
-        
-        var user = new User
-        {
-            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            WorkspaceId = workspaceId,
-            Email = "demo@scopeline.local",
-            DisplayName = "Jamie Rivera",
-            Role = "pm",
-            Onboarded = true,
-            OnboardingStep = 4
-        };
-        user.PasswordHash = hasher.HashPassword(user, "Demo123!");
 
-        // Also add secondary demo alias for existing test runners
-        var userLegacy = new User
+        // 1. Ensure Client Shield demo user exists
+        if (!await db.Users.AnyAsync(u => u.Email == "client@scopeline.local"))
         {
-            Id = Guid.Parse("22222222-2222-2222-2222-222222222223"),
-            WorkspaceId = workspaceId,
-            Email = "demo@ledgerandfield.local",
-            DisplayName = "Jamie Rivera",
-            Role = "pm",
-            Onboarded = true,
-            OnboardingStep = 4
-        };
-        userLegacy.PasswordHash = hasher.HashPassword(userLegacy, "Demo123!");
+            var clientWsId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+            var clientWorkspace = new Workspace
+            {
+                Id = clientWsId,
+                Name = "Nexus Ventures Ltd.",
+                Plan = "Team Plan · 30-Day Free Trial",
+                Perspective = "client",
+                CreatedAt = DateTimeOffset.UtcNow,
+                TrialEndsAt = DateTimeOffset.UtcNow.AddDays(30)
+            };
 
-        var p1 = Guid.Parse("33333333-3333-3333-3333-333333333333");
+            var clientUser = new User
+            {
+                Id = Guid.Parse("77777777-7777-7777-7777-777777777777"),
+                WorkspaceId = clientWsId,
+                Email = "client@scopeline.local",
+                DisplayName = "Kunal Patil (Founder)",
+                PhoneNumber = "+1 (555) 019-2834",
+                Role = "founder",
+                Onboarded = true,
+                OnboardingStep = 4,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            clientUser.PasswordHash = hasher.HashPassword(clientUser, "Demo123!");
+
+            var clientProjId = Guid.Parse("88888888-8888-8888-8888-888888888888");
+            var clientProj = new Project
+            {
+                Id = clientProjId,
+                WorkspaceId = clientWsId,
+                Name = "Enterprise Web Application & Portal",
+                ClientName = "DevConsulting Global Ltd.",
+                ScopeValue = 185000,
+                Currency = "USD",
+                Perspective = "client",
+                StartDate = new DateOnly(2026, 2, 1),
+                Status = "Active",
+                CreatedAt = DateTimeOffset.UtcNow,
+                Contract = new ContractRecord
+                {
+                    Id = Guid.NewGuid(),
+                    ProjectId = clientProjId,
+                    FileName = "DevConsulting_MSA_Signed.pdf",
+                    Uploaded = true,
+                    OriginalScope = "§1.1 Multi-role user login, admin RBAC, and SSO; §1.2 Product catalog with multi-attribute faceted category filters (brand, pricing, availability); §1.3 Sub-500ms performance SLA; §1.4 Cross-browser and mobile web support.",
+                    ContractValueText = "$185,000 (Fixed Price)",
+                    ExclusionsAllowances = "§2.1 Custom enterprise ERP integrations (SAP, Oracle); §2.2 Custom AI predictive pipelines; §2.3 Third-party data warehousing.",
+                    PaymentTerms = "Net 30, milestone-based disbursements.",
+                    ChangeVariationRules = "§3.1 Any legitimate out-of-scope work under Section 2.0 billed at $150/hr subject to prior written approval from Client.",
+                    NoticePeriods = "§3.2 Written notice required prior to commencement of variation.",
+                    CommercialClauses = "§5.1 90-Day Post-Launch Warranty: Vendor warrants deliverables operate free from reproducible defects, memory leaks, or crashes. Defect fixes shall be corrected at NO ADDITIONAL COST."
+                }
+            };
+
+            db.Workspaces.Add(clientWorkspace);
+            db.Users.Add(clientUser);
+            db.Projects.Add(clientProj);
+            await db.SaveChangesAsync();
+        }
+
+        // 2. Ensure Agency demo user exists
+        if (!await db.Users.AnyAsync(u => u.Email == "demo@scopeline.local"))
+        {
+            var workspaceId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var workspace = new Workspace
+            {
+                Id = workspaceId,
+                Name = "Nimbus Digital",
+                Plan = "Team Plan · 30-Day Free Trial",
+                Perspective = "vendor",
+                CreatedAt = DateTimeOffset.UtcNow,
+                TrialEndsAt = DateTimeOffset.UtcNow.AddDays(30)
+            };
+            
+            var user = new User
+            {
+                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                WorkspaceId = workspaceId,
+                Email = "demo@scopeline.local",
+                DisplayName = "Jamie Rivera (Agency PM)",
+                Role = "pm",
+                Onboarded = true,
+                OnboardingStep = 4,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            user.PasswordHash = hasher.HashPassword(user, "Demo123!");
+
+            var p1 = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var p2 = Guid.Parse("44444444-4444-4444-4444-444444444444");
         var p3 = Guid.Parse("55555555-5555-5555-5555-555555555555");
 
@@ -188,9 +244,10 @@ public static class DemoSeeder
         };
 
         db.Workspaces.Add(workspace);
-        db.Users.AddRange(user, userLegacy);
+        db.Users.Add(user);
         db.Projects.AddRange(northwind, vertex, brightpath);
         await db.SaveChangesAsync();
+        }
     }
 
     private static ProjectDocument Doc(Guid projectId, string name, string kind, long size, string date) => new()

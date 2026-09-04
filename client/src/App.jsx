@@ -107,6 +107,7 @@ export default function App() {
   }
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
+  const currentPerspective = workspace?.perspective || activeProject?.perspective || user?.perspective || 'vendor';
 
   return (
     <div id="app">
@@ -145,6 +146,7 @@ export default function App() {
             activeProjectId={activeProjectId}
             setPage={setPage}
             setActiveProjectId={setActiveProjectId}
+            perspective={currentPerspective}
           />
         )}
         {page === 'projects' && (
@@ -182,7 +184,7 @@ export default function App() {
           />
         )}
         {page === 'invoices' && (
-          <InvoiceTracking activeProject={activeProject} />
+          <InvoiceTracking activeProject={activeProject} refreshProjects={fetchProjects} />
         )}
         {page === 'assistant' && (
           <AiAssistant activeProject={activeProject} />

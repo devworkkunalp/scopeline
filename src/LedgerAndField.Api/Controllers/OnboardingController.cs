@@ -30,6 +30,8 @@ public class OnboardingController(AppDbContext db) : ControllerBase
             user.PhoneNumber = req.PhoneNumber.Trim();
         if (!string.IsNullOrWhiteSpace(req.Role))
             user.Role = req.Role.Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(req.Perspective))
+            user.Workspace.Perspective = req.Perspective.Trim().ToLowerInvariant();
 
         user.OnboardingStep = 1;
         await db.SaveChangesAsync();
@@ -45,7 +47,7 @@ public class OnboardingController(AppDbContext db) : ControllerBase
     [HttpPost("api/onboarding/project")]
     public async Task<IActionResult> CreateFirstProject(OnboardingProjectRequest req)
     {
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == UserId);
+        var user = await db.Users.Include(u => u.Workspace).FirstOrDefaultAsync(u => u.Id == UserId);
         if (user is null) return NotFound();
 
         var p = new Project
@@ -56,6 +58,7 @@ public class OnboardingController(AppDbContext db) : ControllerBase
             ClientName = string.IsNullOrWhiteSpace(req.ClientName) ? "Client" : req.ClientName.Trim(),
             ScopeValue = req.ScopeValue ?? 0,
             Currency = string.IsNullOrWhiteSpace(req.Currency) ? "USD" : req.Currency,
+            Perspective = user.Workspace?.Perspective ?? "vendor",
             StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
             Status = "Active",
             CreatedAt = DateTimeOffset.UtcNow,

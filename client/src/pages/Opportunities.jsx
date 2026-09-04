@@ -95,35 +95,45 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
       </div>
     );
   }
+  const isClient = activeProject?.perspective === 'client';
 
   return (
     <>
       <TitleBlock
-        title="Scope Opportunities"
-        sub="Detected out-of-scope or unbilled work awaiting review"
-        project={activeProject}
+        title={isClient ? 'Scope & Overbilling Audit' : 'Scope Opportunities'}
+        sub={
+          isClient
+            ? `Cross-referencing vendor claims for ${activeProject?.name || 'project'} against SOW deliverables`
+            : `Detected unbilled work for ${activeProject?.name || 'project'}`
+        }
       />
-      {toast && <div className="toast">{toast}</div>}
+
       <div className="content">
-        {/* Pill filter tabs & actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-          <div className="pill-tabs" style={{ margin: 0 }}>
-            {TABS.map((t) => (
+        {/* Filter bar + Action */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+          <div className="filter-bar">
+            <button
+              className={`pill${filter === 'all' ? ' active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              All ({opps.length})
+            </button>
+            {STATUS_ORDER.map((st) => (
               <button
-                key={t.key}
-                className={filter === t.key ? 'active' : ''}
-                onClick={() => setFilter(t.key)}
-                id={`opp-tab-${t.key}`}
+                key={st}
+                className={`pill${filter === st ? ' active' : ''}`}
+                onClick={() => setFilter(st)}
               >
-                {t.label}
+                {isClient && st === 'confirmed' ? 'Challenged' : isClient && st === 'approved' ? 'Authorized' : STAMP_LABELS[st]} ({counts[st] || 0})
               </button>
             ))}
           </div>
           <button
-            className="btn orange small"
+            className={`btn small ${isClient ? '' : 'orange'}`}
+            style={isClient ? { background: '#2563EB', color: '#fff', border: 'none' } : {}}
             onClick={() => setShowChecker(true)}
           >
-            + Log Client Ask / Check Scope
+            {isClient ? '+ Audit Vendor Claim / Check SOW' : '+ Log Client Ask / Check Scope'}
           </button>
         </div>
 
@@ -136,17 +146,21 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
             marginBottom: 14,
           }}
         >
-          Showing {allFiltered.length} opportunities · {fmt(totalBillable)} billable value
+          {isClient
+            ? `Showing ${allFiltered.length} vendor claims · ${fmt(totalBillable)} exposure under audit`
+            : `Showing ${allFiltered.length} opportunities · ${fmt(totalBillable)} billable value`}
         </div>
 
         {loading && <div className="spinner" />}
 
         {!loading && allFiltered.length === 0 && (
           <div className="empty">
-            <h4>No opportunities in this status</h4>
+            <h4>{isClient ? 'No vendor claims under this status' : 'No opportunities in this status'}</h4>
             {filter === 'all'
-              ? 'Run AI analysis from Project Activity to detect out-of-scope work.'
-              : `No ${STAMP_LABELS[filter] || filter} opportunities.`}
+              ? isClient
+                ? 'Run AI analysis from Project Activity to audit incoming vendor correspondence.'
+                : 'Run AI analysis from Project Activity to detect out-of-scope work.'
+              : `No ${STAMP_LABELS[filter] || filter} items.`}
           </div>
         )}
 
@@ -155,6 +169,7 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
             key={opp.id}
             opp={opp}
             busy={busy}
+            isClient={isClient}
             onViewEvidence={() => setSelected(opp)}
             onConfirm={() => changeStatus(opp, 'confirmed')}
             onReject={() => {
@@ -168,7 +183,14 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
       </div>
 
       {/* Evidence Modal */}
-      {selected && <EvidenceModal opp={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <EvidenceModal
+          opp={selected}
+          projectId={activeProject?.id}
+          perspective={activeProject?.perspective || 'vendor'}
+          onClose={() => setSelected(null)}
+        />
+      )}
 
       {/* Reject Modal */}
       {rejectId && (

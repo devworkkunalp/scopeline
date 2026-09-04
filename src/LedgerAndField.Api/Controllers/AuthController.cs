@@ -34,11 +34,13 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
             return Conflict("An account with that email address already exists. Please sign in instead.");
 
         var workspaceName = string.IsNullOrWhiteSpace(req.CompanyName) ? "My Company" : req.CompanyName.Trim();
+        var perspective = string.IsNullOrWhiteSpace(req.Perspective) ? "vendor" : req.Perspective.Trim().ToLowerInvariant();
         var workspace = new Workspace
         {
             Id = Guid.NewGuid(),
             Name = workspaceName,
             Plan = "Team Plan · 30-Day Free Trial",
+            Perspective = perspective,
             CreatedAt = DateTimeOffset.UtcNow,
             TrialEndsAt = DateTimeOffset.UtcNow.AddDays(30)
         };
@@ -50,7 +52,7 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
             Email = email,
             DisplayName = string.IsNullOrWhiteSpace(req.DisplayName) ? req.Email.Split('@')[0] : req.DisplayName.Trim(),
             PhoneNumber = req.PhoneNumber?.Trim() ?? "",
-            Role = "pm",
+            Role = perspective == "client" ? "founder" : "pm",
             Onboarded = false,
             OnboardingStep = 0,
             CreatedAt = DateTimeOffset.UtcNow
@@ -62,7 +64,7 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
         await db.SaveChangesAsync();
 
         var token = tokens.Create(user, workspace);
-        return Ok(new AuthResponse(token, user.Email, workspace.Name, workspace.Id, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, 30));
+        return Ok(new AuthResponse(token, user.Email, workspace.Name, workspace.Id, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, 30, workspace.Perspective));
     }
 
     [HttpPost("auth/login")]
@@ -81,7 +83,7 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
 
         var trialDays = Math.Max(0, (int)Math.Ceiling((user.Workspace.TrialEndsAt - DateTimeOffset.UtcNow).TotalDays));
         var token = tokens.Create(user, user.Workspace);
-        return Ok(new AuthResponse(token, user.Email, user.Workspace.Name, user.WorkspaceId, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, trialDays));
+        return Ok(new AuthResponse(token, user.Email, user.Workspace.Name, user.WorkspaceId, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, trialDays, user.Workspace.Perspective ?? "vendor"));
     }
 
     [Authorize]

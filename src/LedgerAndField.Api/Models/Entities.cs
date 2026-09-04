@@ -5,6 +5,7 @@ public class Workspace
     public Guid Id { get; set; }
     public string Name { get; set; } = "Nimbus Digital";
     public string Plan { get; set; } = "Team Plan · 30-Day Free Trial";
+    public string Perspective { get; set; } = "vendor"; // "vendor" (Agency/Dev Shop) or "client" (Founder/Buyer)
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset TrialEndsAt { get; set; } = DateTimeOffset.UtcNow.AddDays(30);
     public ICollection<User> Users { get; set; } = new List<User>();
@@ -35,6 +36,7 @@ public class Project
     public string ClientName { get; set; } = "";
     public decimal ScopeValue { get; set; }
     public string Currency { get; set; } = "USD";
+    public string Perspective { get; set; } = "vendor"; // "vendor" or "client"
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public string Status { get; set; } = "Active"; // Active, Closing Out, Completed, On Hold
