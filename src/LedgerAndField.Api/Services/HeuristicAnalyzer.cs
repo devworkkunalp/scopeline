@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using LedgerAndField.Api.Dtos;
 using LedgerAndField.Api.Models;
 
 namespace LedgerAndField.Api.Services;
@@ -157,58 +158,245 @@ public class HeuristicAnalyzer
         return $"Based on the SOW and {opps.Count} detected opportunities for {project.Name} (Client: {project.ClientName}):\n• Total Project Value: {project.ScopeValue:C0}\n• Recoverable Unbilled Exposure: {opps.Sum(o => o.BillableValue - o.InvoicedValue):C0}\n\nTry asking about unbilled work, change requests, evidence sources, or SOW exclusions.";
     }
 
-    public (string subject, string body, string clauseRef, string verdict, decimal defendedAmount) GenerateDefenseLetter(Project project, Opportunity opp, string? vendorName, string? customNotes)
+    public DefenseLetterResponse GenerateDefenseLetter(Project project, Opportunity opp, DefenseLetterRequest? req)
     {
-        var vendor = !string.IsNullOrWhiteSpace(vendorName) ? vendorName.Trim() : (project.Perspective == "client" ? project.ClientName : "Vendor Delivery Team");
+        var perspective = (req?.Perspective ?? project.Perspective ?? "vendor").ToLowerInvariant();
+        var isClient = perspective == "client";
+        var tone = (req?.Tone ?? "diplomatic").ToLowerInvariant();
         var contract = project.Contract;
-        var sowRef = opp.Clause ?? (contract?.OriginalScope != null ? "§1.0 Baseline Scope of Deliverables" : "Executed Contract Agreement");
-        
-        var isExclusion = (opp.Clause ?? "").Contains("Exclusion", StringComparison.OrdinalIgnoreCase) || (opp.Clause ?? "").Contains("§2", StringComparison.OrdinalIgnoreCase);
-        var verdict = isExclusion ? "VALIDATED_VARIATION" : "CHALLENGE_OVERBILLING";
         var amount = opp.BillableValue;
+        var crNum = opp.ChangeRequest?.Number ?? "CR-Draft";
 
-        var subject = $"Scope Boundary & SOW Review: {opp.Title} [Ref: {project.Name}]";
-        
+        var recipient = !string.IsNullOrWhiteSpace(req?.RecipientName)
+            ? req.RecipientName.Trim()
+            : (!string.IsNullOrWhiteSpace(req?.VendorName)
+                ? req.VendorName.Trim()
+                : (isClient ? "Vendor Project Lead" : (project.ClientName ?? "Client Representative")));
+
+        var recipientTitle = !string.IsNullOrWhiteSpace(req?.RecipientTitle)
+            ? req.RecipientTitle.Trim()
+            : (isClient ? "Vendor Account Manager" : "Project Sponsor / Procurement Lead");
+
+        var sowRef = !string.IsNullOrWhiteSpace(opp.Clause)
+            ? opp.Clause
+            : (isClient ? (contract?.OriginalScope != null ? "§1.0 Baseline Scope of Deliverables" : "Executed Contract Agreement")
+                        : (contract?.ChangeVariationRules ?? "§4.0 Scope Variation & Change Request Terms"));
+
+        var evidenceCitations = opp.Evidence != null && opp.Evidence.Count > 0
+            ? opp.Evidence.Select(e => $"\"{e.Text}\" (Source: {e.Source})").ToArray()
+            : [$"\"{opp.Description}\" (Logged Milestone Item)"];
+
+        var evidenceText = string.Join("\n", evidenceCitations.Select(c => $"• {c}"));
+        var customNotesBlock = string.IsNullOrWhiteSpace(req?.CustomNotes)
+            ? ""
+            : $"\n\nAdditional Commercial Context:\n{req.CustomNotes.Trim()}";
+
+        string subject;
         string body;
-        if (verdict == "CHALLENGE_OVERBILLING")
+        string verdict;
+        string nextSteps;
+
+        if (isClient)
         {
-            body = $"""
-                Dear {vendor},
+            // Buyer Shield / Client Perspective (Disputing an unjustified vendor surcharge or confirming baseline)
+            var isExclusion = (opp.Clause ?? "").Contains("Exclusion", StringComparison.OrdinalIgnoreCase) || (opp.Clause ?? "").Contains("§2", StringComparison.OrdinalIgnoreCase);
+            verdict = isExclusion ? "VALIDATED_VARIATION" : "CHALLENGE_OVERBILLING";
 
-                Thank you for submitting the change request regarding "{opp.Title}" for the proposed amount of {amount:C0}.
+            if (verdict == "CHALLENGE_OVERBILLING")
+            {
+                if (tone == "firm_contractual")
+                {
+                    subject = $"FORMAL CONTRACTUAL NOTICE: Rejection of Unauthorized Surcharge — {opp.Title} [{project.Name}]";
+                    body = $"""
+                        Dear {recipient} ({recipientTitle}),
 
-                Upon cross-referencing our executed Statement of Work (SOW) agreement for "{project.Name}" (Total Contract Sum: {project.ScopeValue:C0}), we have determined that this deliverable is already covered under our contracted baseline obligations:
-                → Governing Reference: {sowRef}
+                        RE: FORMAL SCOPE DISPUTE & CHARGE REJECTION — {opp.Title} ({amount:C0})
+                        PROJECT: {project.Name} | CONTRACT SUM: {project.ScopeValue:C0}
 
-                Contract Scope Extract:
-                "{(contract?.OriginalScope != null ? Truncate(contract.OriginalScope, 250) : opp.Description)}"
+                        Please be formally advised that the proposed supplementary charge of {amount:C0} for "{opp.Title}" is hereby REJECTED under the terms of our executed Statement of Work.
 
-                As this functionality is integral to the agreed baseline deliverables, it does not constitute an additional billable variation.
+                        1. CONTRACTUAL GROUNDING & BASELINE OBLIGATIONS
+                        Pursuant to {sowRef}, the activities described constitute core baseline deliverables rather than an out-of-scope variation:
+                        "{(contract?.OriginalScope != null ? Truncate(contract.OriginalScope, 280) : opp.Description)}"
 
-                {(string.IsNullOrWhiteSpace(customNotes) ? "" : $"Additional Context:\n{customNotes}\n\n")}Please continue implementation in accordance with the established project delivery timeline. If you believe specific third-party integration fees apply that fall strictly outside §1.0, please provide an itemized justification citing the relevant contract exclusion.
+                        2. AUDIT TRAIL & EVIDENTIARY RECORD
+                        {evidenceText}
 
-                Best regards,
-                {project.ClientName} Project Management Team
-                """;
+                        3. FORMAL DIRECTIVE
+                        No supplementary invoicing or change order billings will be authorized for this deliverable. The vendor team is instructed to proceed with completion in accordance with the established milestone schedule and fixed-fee commercial terms.{customNotesBlock}
+
+                        Sincerely,
+                        {project.ClientName} Commercial & Procurement Operations
+                        """;
+                    nextSteps = "Do not authorize payment for this item. Request vendor confirmation that deliverable will proceed under the baseline fixed contract.";
+                }
+                else if (tone == "collaborative")
+                {
+                    subject = $"Milestone Scope Alignment: {opp.Title} [{project.Name}]";
+                    body = $"""
+                        Hi {recipient},
+
+                        We appreciate the team's ongoing dedication to {project.Name}.
+
+                        Regarding the recent discussion around "{opp.Title}" ({amount:C0}), we took some time to cross-reference our original Statement of Work to ensure we stay aligned on project scope.
+
+                        Based on our agreed baseline in {sowRef}, this deliverable is already covered under the fixed contract scope:
+                        "{(contract?.OriginalScope != null ? Truncate(contract.OriginalScope, 250) : opp.Description)}"
+
+                        {evidenceText}
+
+                        Let's ensure the team focuses effort here without adding supplementary cost friction, keeping us on track for our upcoming milestone delivery.{customNotesBlock}
+
+                        Best regards,
+                        {project.ClientName} Project Team
+                        """;
+                    nextSteps = "Discuss in next sprint sync to ensure vendor acknowledges baseline deliverable obligations.";
+                }
+                else // Diplomatic (Default)
+                {
+                    subject = $"Commercial Scope Review: {opp.Title} — {project.Name}";
+                    body = $"""
+                        Dear {recipient},
+
+                        Thank you for submitting the change request regarding "{opp.Title}" for {amount:C0}.
+
+                        Upon review against our executed Statement of Work for "{project.Name}" (Total Contract Sum: {project.ScopeValue:C0}), we noted that this deliverable falls under our agreed baseline commitments:
+                        → Governing Reference: {sowRef}
+
+                        Contract Scope Extract:
+                        "{(contract?.OriginalScope != null ? Truncate(contract.OriginalScope, 250) : opp.Description)}"
+
+                        Supporting Artifacts:
+                        {evidenceText}
+
+                        Because this functionality is integral to the baseline scope, it does not qualify as a billable variation under contract terms.{customNotesBlock}
+
+                        Please confirm that delivery will proceed under the agreed milestone plan.
+
+                        Best regards,
+                        {project.ClientName} Project Management
+                        """;
+                    nextSteps = "Send notice to vendor lead and request formal confirmation of baseline delivery.";
+                }
+            }
+            else
+            {
+                subject = $"Scope Variation Approval Notice: {opp.Title} [{project.Name}]";
+                body = $"""
+                    Dear {recipient},
+
+                    We have completed our commercial review of the change request for "{opp.Title}" ({amount:C0}).
+
+                    Our contract audit confirms that this deliverable constitutes an authorized scope addition under {sowRef}.
+
+                    We approve proceeding with this variation under Change Order #{crNum}. Please ensure itemized invoicing references this change order number upon milestone completion.
+
+                    Best regards,
+                    {project.ClientName} Project Team
+                    """;
+                nextSteps = "Counter-sign the change order and monitor invoice submission for proper change order reference.";
+            }
         }
         else
         {
-            body = $"""
-                Dear {vendor},
+            // Vendor / Contractor Perspective (Defending out-of-scope compensation to the client)
+            verdict = "OUT_OF_SCOPE_DEFENDED";
 
-                We have reviewed the change request for "{opp.Title}" ({amount:C0}).
+            if (tone == "firm_contractual")
+            {
+                subject = $"FORMAL NOTICE: Out-of-Scope Variation & Change Authorization — {opp.Title} [{project.Name}]";
+                body = $"""
+                    Dear {recipient} ({recipientTitle}),
 
-                Our contract analysis confirms this item qualifies as an out-of-scope variation under:
-                → Governing Reference: {sowRef}
+                    RE: FORMAL SOW SCOPE DEFENSE & VARIATION NOTICE — {opp.Title}
+                    PROJECT: {project.Name} | PROPOSED VALUE: {amount:C0} | REF: {crNum}
 
-                The proposed pricing aligns with the agreed contractual variation terms. We approve proceeding with this scope addition under Change Order #{opp.ChangeRequest?.Number ?? "CR-Draft"}.
+                    Please be advised that the deliverable "{opp.Title}" requested during project delivery falls outside the baseline specifications established in our executed Statement of Work.
 
-                Best regards,
-                {project.ClientName} Project Management Team
-                """;
+                    1. STATEMENT OF WORK BOUNDARY CLAUSE
+                    Pursuant to {sowRef}, work not explicitly enumerated in the baseline specifications or falling under contractual exclusions requires written authorization:
+                    "{(contract?.ExclusionsAllowances != null ? Truncate(contract.ExclusionsAllowances, 250) : "Third-party integrations, out-of-scope enhancements, and client-directed redesigns require an executed Change Order.")}"
+
+                    2. VERIFIED CLIENT DIRECTIVE & EVIDENCE
+                    {evidenceText}
+
+                    3. COMMERCIAL VALUATION & RESOURCE IMPACT
+                    • Estimated Delivery Effort: {opp.EstimatedCost:C0} (Direct Engineering & QA)
+                    • Total Billable Addition: {amount:C0}
+                    • Change Order Reference: {crNum}
+
+                    In accordance with contractual notice procedures, formal authorization is required prior to deployment of these deliverables.{customNotesBlock}
+
+                    Sincerely,
+                    Contractor Commercial & Delivery Operations
+                    """;
+                nextSteps = "Send formal notice along with the 1-click E-Signature magic link for client signature.";
+            }
+            else if (tone == "collaborative")
+            {
+                subject = $"Scope & Delivery Options: {opp.Title} — {project.Name}";
+                body = $"""
+                    Hi {recipient},
+
+                    We're making great progress on {project.Name} and are excited to support your goals with "{opp.Title}".
+
+                    As we mapped out implementation for this feature, our delivery team confirmed that it introduces new functionality beyond our initial baseline Statement of Work ({sowRef}).
+
+                    Here is what we've captured from our discussions:
+                    {evidenceText}
+
+                    To ensure total commercial transparency, we have prepared Change Order {crNum} ({amount:C0}).
+
+                    Options moving forward:
+                    1. Authorize Change Order {crNum} to proceed with implementation immediately.
+                    2. Defer this item to a future enhancement phase to maintain the current baseline budget.{customNotesBlock}
+
+                    Let us know what works best for your team!
+
+                    Best regards,
+                    Project Delivery Team
+                    """;
+                nextSteps = "Share collaborative options with client sponsor to decide between immediate change order or Phase 2 backlog.";
+            }
+            else // Diplomatic (Default)
+            {
+                subject = $"Scope Alignment & Change Order Summary: {opp.Title} [{project.Name}]";
+                body = $"""
+                    Dear {recipient},
+
+                    Thank you for your partnership on {project.Name}.
+
+                    Following up on the requested addition for "{opp.Title}", our team has conducted a commercial review against our signed Statement of Work.
+
+                    Because this requirement adds new functionality beyond our baseline scope ({sowRef}), it is being tracked under our transparent variation process:
+                    • Requested Item: {opp.Title}
+                    • Contractual Basis: {sowRef}
+                    • Verified Request Context:
+                    {evidenceText}
+                    • Commercial Value: {amount:C0} (Change Order #{crNum})
+
+                    We have prepared a secure 1-click review portal where your team can review the 3-way grounded proof and execute the approval digitally.{customNotesBlock}
+
+                    Please let us know if you have any questions or if you would like us to proceed with execution.
+
+                    Best regards,
+                    Project Management & Commercial Lead
+                    """;
+                nextSteps = "Provide the magic link to the client for digital execution via the ScopeLine Commercial Portal.";
+            }
         }
 
-        return (subject, body, sowRef, verdict, amount);
+        return new DefenseLetterResponse(
+            Subject: subject,
+            Body: body,
+            SowReference: sowRef,
+            ChallengeVerdict: verdict,
+            DefendedAmount: amount,
+            Tone: tone,
+            Perspective: perspective,
+            EvidenceCitations: evidenceCitations,
+            SuggestedNextSteps: nextSteps
+        );
     }
 
     private static (string type, double confidence)? Classify(string sentence)

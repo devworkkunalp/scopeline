@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LedgerAndField.Api.Dtos;
 using LedgerAndField.Api.Models;
 using LedgerAndField.Api.Services;
 using Xunit;
@@ -96,17 +97,26 @@ public class HeuristicAnalyzerTests
         };
 
         // Act
-        var (subject, body, sowRef, verdict, amt) = _analyzer.GenerateDefenseLetter(
-            project, opp, "Apex Software Agency", "Included in base SOW Section 1.2");
+        var res = _analyzer.GenerateDefenseLetter(
+            project, opp, new DefenseLetterRequest(
+                VendorName: "Apex Software Agency",
+                VendorContact: null,
+                RecipientName: "Apex Software Agency",
+                RecipientTitle: "Vendor Lead",
+                RecipientEmail: null,
+                Tone: "diplomatic",
+                Perspective: "client",
+                CustomNotes: "Included in base SOW Section 1.2"
+            ));
 
         // Assert
-        subject.Should().Contain("Scope Boundary & SOW Review");
-        body.Should().Contain("Apex Software Agency");
-        body.Should().Contain("$3,500");
-        body.Should().Contain("SOW Section 1.2");
-        body.Should().Contain("baseline obligations");
-        amt.Should().Be(3500m);
-        verdict.Should().Be("CHALLENGE_OVERBILLING");
+        res.Subject.Should().Contain("Commercial Scope Review");
+        res.Body.Should().Contain("Apex Software Agency");
+        res.Body.Should().Contain("$3,500");
+        res.Body.Should().Contain("SOW Section 1.2");
+        res.Body.Should().Contain("baseline commitments");
+        res.DefendedAmount.Should().Be(3500m);
+        res.ChallengeVerdict.Should().Be("CHALLENGE_OVERBILLING");
     }
 
     [Fact]

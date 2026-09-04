@@ -19,8 +19,28 @@ public record AssistantRequest(string? Question, string? Query);
 public record CheckScopeRequest(string Title, string Description, string? Source, string? DateLabel, decimal? EstimatedHours, decimal? HourlyRate);
 public record ManualOpportunityRequest(string Title, string Description, string? Type, decimal EstimatedCost, decimal BillableValue, string? Clause, string? Source, string? DateLabel, bool CreateChangeRequest);
 public record GenerateBaselineRequest(string RequirementsText, decimal? ContractValue, decimal? HourlyRate, string? IndustryPreset, int? TimelineWeeks, int? RevisionLimit);
-public record DefenseLetterRequest(string? VendorName, string? VendorContact, string? CustomNotes);
-public record DefenseLetterResponse(string Subject, string Body, string SowReference, string ChallengeVerdict, decimal DefendedAmount);
+public record DefenseLetterRequest(
+    string? VendorName,
+    string? VendorContact,
+    string? RecipientName,
+    string? RecipientTitle,
+    string? RecipientEmail,
+    string? Tone,
+    string? Perspective,
+    string? CustomNotes
+);
+
+public record DefenseLetterResponse(
+    string Subject,
+    string Body,
+    string SowReference,
+    string ChallengeVerdict,
+    decimal DefendedAmount,
+    string Tone,
+    string Perspective,
+    string[] EvidenceCitations,
+    string SuggestedNextSteps
+);
 public record PublicApproveRequest(string SignerName, string? SignerEmail, string? SignatureData, string? Notes);
 public record PublicDeclineRequest(string? Reason, string? Notes);
 

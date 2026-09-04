@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import TitleBlock from '../components/TitleBlock.jsx';
 import EvidenceModal from '../components/EvidenceModal.jsx';
 import ScopeCheckerModal from '../components/ScopeCheckerModal.jsx';
+import DefenseLetterModal from '../components/DefenseLetterModal.jsx';
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
@@ -25,6 +26,7 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(null);
+  const [defenseOpp, setDefenseOpp] = useState(null);
   const [showChecker, setShowChecker] = useState(false);
   const [rejectId, setRejectId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -171,6 +173,7 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
             busy={busy}
             isClient={isClient}
             onViewEvidence={() => setSelected(opp)}
+            onDefenseLetter={() => setDefenseOpp(opp)}
             onConfirm={() => changeStatus(opp, 'confirmed')}
             onReject={() => {
               setRejectId(opp.id);
@@ -181,6 +184,15 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
           />
         ))}
       </div>
+
+      {/* Defense Letter Modal */}
+      {defenseOpp && (
+        <DefenseLetterModal
+          project={activeProject}
+          opp={defenseOpp}
+          onClose={() => setDefenseOpp(null)}
+        />
+      )}
 
       {/* Evidence Modal */}
       {selected && (
@@ -246,7 +258,7 @@ export default function Opportunities({ activeProject, refreshProjects, setPage 
   );
 }
 
-function OppCard({ opp, busy, onViewEvidence, onConfirm, onReject, onGenerateCR, onGotoInvoicing }) {
+function OppCard({ opp, busy, isClient, onViewEvidence, onDefenseLetter, onConfirm, onReject, onGenerateCR, onGotoInvoicing }) {
   const pct = Math.round((opp.confidence || 0) * 100);
   const isDetected = opp.status === 'detected';
   const isReview = opp.status === 'review';
@@ -296,9 +308,19 @@ function OppCard({ opp, busy, onViewEvidence, onConfirm, onReject, onGenerateCR,
       </div>
 
       <div className="foot">
-        <button className="btn ghost small" onClick={onViewEvidence} id={`btn-ev-${opp.id}`}>
-          View Evidence &amp; Timeline
-        </button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button className="btn ghost small" onClick={onViewEvidence} id={`btn-ev-${opp.id}`}>
+            View Evidence
+          </button>
+          <button
+            className="btn ghost small"
+            onClick={onDefenseLetter}
+            id={`btn-defense-${opp.id}`}
+            title="Generate formal SOW scope defense letter or commercial dispute notice"
+          >
+            🛡️ Scope Defense Notice
+          </button>
+        </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
           {(isDetected || isReview) && (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import TitleBlock from '../components/TitleBlock.jsx';
 import EvidenceModal from '../components/EvidenceModal.jsx';
+import DefenseLetterModal from '../components/DefenseLetterModal.jsx';
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
@@ -10,6 +11,7 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
   const [opps, setOpps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [defenseOpp, setDefenseOpp] = useState(null);
   const [editCr, setEditCr] = useState(null);
   const [shareCr, setShareCr] = useState(null);
   const [shareData, setShareData] = useState(null);
@@ -268,6 +270,14 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
                   </button>
                   <button
                     className="btn ghost small"
+                    onClick={() => setDefenseOpp(opp)}
+                    id={`btn-defense-cr-${cr.id}`}
+                    title="Generate formal SOW scope defense letter or commercial notice"
+                  >
+                    🛡️ Scope Defense Notice
+                  </button>
+                  <button
+                    className="btn ghost small"
                     onClick={() => openShareModal(cr, opp)}
                     disabled={busy === cr.id + 'share'}
                     id={`btn-share-cr-${cr.id}`}
@@ -312,6 +322,15 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
       </div>
 
       {selected && <EvidenceModal opp={selected} onClose={() => setSelected(null)} />}
+
+      {/* Scope Defense Letter Modal */}
+      {defenseOpp && (
+        <DefenseLetterModal
+          project={activeProject}
+          opp={defenseOpp}
+          onClose={() => setDefenseOpp(null)}
+        />
+      )}
 
       {/* Share Approval Link Modal */}
       {shareCr && shareData && (

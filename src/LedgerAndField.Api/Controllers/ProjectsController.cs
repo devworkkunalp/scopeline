@@ -93,14 +93,15 @@ public class ProjectsController(
         var p = await Mine()
             .Include(x => x.Contract)
             .Include(x => x.Opportunities).ThenInclude(o => o.ChangeRequest)
+            .Include(x => x.Opportunities).ThenInclude(o => o.Evidence)
             .FirstOrDefaultAsync(x => x.Id == id);
         if (p is null) return NotFound("Project not found");
 
         var opp = p.Opportunities.FirstOrDefault(o => o.Id == oppId);
         if (opp is null) return NotFound("Opportunity not found");
 
-        var (subject, body, sowRef, verdict, amt) = analyzer.GenerateDefenseLetter(p, opp, req?.VendorName, req?.CustomNotes);
-        return Ok(new DefenseLetterResponse(subject, body, sowRef, verdict, amt));
+        var response = analyzer.GenerateDefenseLetter(p, opp, req);
+        return Ok(response);
     }
 
     [HttpGet("projects/{id:guid}/contract")]
