@@ -99,7 +99,12 @@ public static class Mapper
             approved = cr.Approved,
             cr.Reason,
             cr.ChangedScope,
-            cr.CostBreakdown
+            cr.CostBreakdown,
+            approvalToken = cr.ApprovalToken,
+            signedBy = cr.SignedBy,
+            signedEmail = cr.SignedEmail,
+            signedAt = cr.SignedAt,
+            clientNotes = cr.ClientNotes
         };
 
         return new
@@ -122,6 +127,51 @@ public static class Mapper
             timeline = o.Timeline.OrderBy(t => t.SortOrder).Select(t => new { date = t.DateLabel, desc = t.Description }),
             changeRequest = crObj,
             changeOrder = crObj // alias for UI compatibility
+        };
+    }
+
+    public static object PublicChangeRequest(ChangeRequest cr)
+    {
+        var o = cr.Opportunity;
+        var p = o.Project;
+        return new
+        {
+            cr.Id,
+            cr.Number,
+            cr.Status,
+            submitted = cr.Submitted,
+            approved = cr.Approved,
+            cr.Reason,
+            cr.ChangedScope,
+            cr.CostBreakdown,
+            approvalToken = cr.ApprovalToken,
+            signedBy = cr.SignedBy,
+            signedEmail = cr.SignedEmail,
+            signedAt = cr.SignedAt,
+            signatureData = cr.SignatureData,
+            clientNotes = cr.ClientNotes,
+            opportunity = new
+            {
+                o.Id,
+                o.Title,
+                desc = o.Description,
+                estCost = o.EstimatedCost,
+                billable = o.BillableValue,
+                o.Clause,
+                o.Type,
+                evidence = o.Evidence.Select(e => new { e.Text, src = e.Source })
+            },
+            project = new
+            {
+                p.Id,
+                p.Name,
+                client = p.ClientName,
+                value = p.ScopeValue,
+                currency = p.Currency,
+                sowBaseline = p.Contract?.OriginalScope,
+                sowExclusions = p.Contract?.ExclusionsAllowances,
+                sowVariationTerms = p.Contract?.ChangeVariationRules
+            }
         };
     }
 

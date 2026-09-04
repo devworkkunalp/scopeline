@@ -310,10 +310,14 @@ public static class DemoSeeder
         {
             Id = Guid.NewGuid(),
             OpportunityId = o.Id,
+            ApprovalToken = "demo-cr011-magic-token",
             Number = "CR-011",
             Status = "approved",
             Submitted = new DateOnly(2025, 11, 20),
             Approved = new DateOnly(2025, 11, 24),
+            SignedBy = "Sarah Jenkins (Director of Ops)",
+            SignedEmail = "s.jenkins@northwind.io",
+            SignedAt = new DateTimeOffset(2025, 11, 24, 16, 30, 0, TimeSpan.Zero),
             Reason = o.Type,
             ChangedScope = o.Description,
             CostBreakdown = "Two weekend engineering sprints and senior dev overtime."
@@ -336,10 +340,14 @@ public static class DemoSeeder
         {
             Id = Guid.NewGuid(),
             OpportunityId = o.Id,
+            ApprovalToken = "demo-cr006-magic-token",
             Number = "CR-006",
             Status = "approved",
             Submitted = new DateOnly(2025, 9, 10),
             Approved = new DateOnly(2025, 9, 15),
+            SignedBy = "David Miller (VP Product)",
+            SignedEmail = "dmiller@northwind.io",
+            SignedAt = new DateTimeOffset(2025, 9, 15, 14, 15, 0, TimeSpan.Zero),
             Reason = o.Type,
             ChangedScope = o.Description,
             CostBreakdown = "Loyalty points calculation engine & frontend reward component."

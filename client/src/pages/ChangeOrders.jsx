@@ -11,6 +11,9 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [editCr, setEditCr] = useState(null);
+  const [shareCr, setShareCr] = useState(null);
+  const [shareData, setShareData] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState('');
 
@@ -99,6 +102,30 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
     } finally {
       setBusy('');
     }
+  }
+
+  async function openShareModal(cr, opp) {
+    setBusy(cr.id + 'share');
+    try {
+      const res = await api.getShareLink(cr.id);
+      setShareCr({ ...cr, opp });
+      // Construct public review URL
+      const origin = window.location.origin;
+      const fullUrl = `${origin}/?token=${res.approvalToken}`;
+      setShareData({ ...res, fullUrl });
+    } catch (ex) {
+      showToast('Error getting share link: ' + ex.message);
+    } finally {
+      setBusy('');
+    }
+  }
+
+  function copyShareUrl() {
+    if (!shareData?.fullUrl) return;
+    navigator.clipboard.writeText(shareData.fullUrl);
+    setCopied(true);
+    showToast('Magic review link copied to clipboard!');
+    setTimeout(() => setCopied(false), 2500);
   }
 
   if (!activeProject) {
@@ -241,6 +268,14 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
                   </button>
                   <button
                     className="btn ghost small"
+                    onClick={() => openShareModal(cr, opp)}
+                    disabled={busy === cr.id + 'share'}
+                    id={`btn-share-cr-${cr.id}`}
+                  >
+                    {busy === cr.id + 'share' ? 'Loading…' : '🔗 Share Approval Link'}
+                  </button>
+                  <button
+                    className="btn ghost small"
                     onClick={() => downloadPdf(cr)}
                     disabled={busy === cr.id + 'pdf'}
                   >
@@ -277,6 +312,77 @@ export default function ChangeOrders({ activeProject, refreshProjects }) {
       </div>
 
       {selected && <EvidenceModal opp={selected} onClose={() => setSelected(null)} />}
+
+      {/* Share Approval Link Modal */}
+      {shareCr && shareData && (
+        <div className="modal-backdrop open" onClick={() => setShareCr(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 580 }}>
+            <div className="modal-head">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>🔗</span>
+                <h3>CLIENT MAGIC APPROVAL LINK</h3>
+              </div>
+              <button onClick={() => setShareCr(null)}>&times;</button>
+            </div>
+            <div className="modal-body" style={{ gap: 16 }}>
+              <p style={{ fontSize: 13, color: 'var(--steel)', margin: 0, lineHeight: 1.5 }}>
+                Share this secure magic link directly with your client sponsor or procurement team. They can inspect the <strong>3-Way Grounded Proof</strong>, review baseline contract exclusions, and execute an <strong>E-Signature</strong> without logging in.
+              </p>
+
+              {/* Status Badge */}
+              <div style={{ background: 'var(--paper-2)', padding: '12px 14px', borderRadius: 8, border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--steel)' }}>Current Status</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: shareData.status === 'approved' ? 'var(--emerald)' : 'var(--orange)', marginTop: 2 }}>
+                    {shareData.status === 'approved' ? '✓ Approved & Executed' : 'Awaiting Client E-Signature'}
+                  </div>
+                </div>
+                {shareData.signedBy && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--steel)' }}>Signed By</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{shareData.signedBy}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Link Box */}
+              <div className="field">
+                <label className="field-label">Public Review & E-Signature URL</label>
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={shareData.fullUrl}
+                    style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, background: 'var(--paper-1)', color: 'var(--navy)' }}
+                  />
+                  <button
+                    className="btn orange small"
+                    onClick={copyShareUrl}
+                    style={{ minWidth: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                  >
+                    {copied ? '✓ Copied!' : '📋 Copy'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview Button */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--paper-2)' }}>
+                <a
+                  href={shareData.fullUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: 13, color: 'var(--orange)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                  ↗️ Open Client Review Portal Preview
+                </a>
+                <button className="btn ghost small" onClick={() => setShareCr(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit modal */}
       {editCr && (

@@ -142,12 +142,18 @@ public class ChangeRequest
     public Guid OpportunityId { get; set; }
     public Opportunity Opportunity { get; set; } = null!;
     public string Number { get; set; } = ""; // e.g. CR-011
-    public string Status { get; set; } = "draft"; // draft, submitted, approved
+    public string Status { get; set; } = "draft"; // draft, submitted, approved, declined
     public DateOnly? Submitted { get; set; }
     public DateOnly? Approved { get; set; }
     public string? Reason { get; set; }
     public string? ChangedScope { get; set; }
     public string? CostBreakdown { get; set; }
+    public string? ApprovalToken { get; set; } // Secure token for public client review
+    public string? SignedBy { get; set; } // Name of client approver
+    public string? SignedEmail { get; set; } // Email of client approver
+    public DateTimeOffset? SignedAt { get; set; } // Timestamp of electronic signature
+    public string? SignatureData { get; set; } // Typed/drawn signature representation
+    public string? ClientNotes { get; set; } // Notes or feedback left by the client
 }
 
 public class Invoice

@@ -81,11 +81,16 @@ export const api = {
   generateDefenseLetter:(projectId, oppId, body) => request(`/projects/${projectId}/opportunities/${oppId}/defense-letter`, { method: "POST", body: JSON.stringify(body || {}) }),
   reconcilePayment:(id, body)        => request(`/opportunities/${id}/reconcile`, { method: "POST", body: JSON.stringify(body) }),
 
-  // Change Requests
-  changeRequests: (projectId)  => request(`/projects/${projectId}/change-requests`),
-  patchCo:        (id, body)   => request(`/change-requests/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  coExport:       (id)         => request(`/change-requests/${id}/export`),
-  coPdfUrl:       (id)         => `/change-requests/${id}/export`,
+  // Change Requests & Public Client Approval Portal
+  changeRequests:       (projectId)    => request(`/projects/${projectId}/change-requests`),
+  patchCo:              (id, body)     => request(`/change-requests/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  coExport:             (id)           => request(`/change-requests/${id}/export`),
+  coPdfUrl:             (id)           => `/change-requests/${id}/export`,
+  getShareLink:         (id)           => request(`/change-requests/${id}/share-link`),
+  getPublicReview:      (token)        => request(`/public/change-requests/${token}`),
+  approvePublicReview:  (token, body)  => request(`/public/change-requests/${token}/approve`, { method: "POST", body: JSON.stringify(body) }),
+  declinePublicReview:  (token, body)  => request(`/public/change-requests/${token}/decline`, { method: "POST", body: JSON.stringify(body) }),
+  publicCoExportUrl:    (token)        => `/public/change-requests/${token}/export`,
 
   // Invoicing
   invoices:         (projectId) => request(`/projects/${projectId}/invoices`),

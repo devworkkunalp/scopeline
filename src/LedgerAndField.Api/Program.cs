@@ -92,7 +92,13 @@ using (var scope = app.Services.CreateScope())
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Workspaces\" ADD COLUMN IF NOT EXISTS \"TrialEndsAt\" timestamp with time zone DEFAULT NOW() + interval '30 days';");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Workspaces\" ADD COLUMN IF NOT EXISTS \"Perspective\" text DEFAULT 'vendor';");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Projects\" ADD COLUMN IF NOT EXISTS \"Perspective\" text DEFAULT 'vendor';");
-        Console.WriteLine("[DB INIT] Column migrations (PhoneNumber, TrialEndsAt, Perspective) verified successfully.");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"ApprovalToken\" text;");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"SignedBy\" text;");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"SignedEmail\" text;");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"SignedAt\" timestamp with time zone;");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"SignatureData\" text;");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"ClientNotes\" text;");
+        Console.WriteLine("[DB INIT] Column migrations (PhoneNumber, TrialEndsAt, Perspective, ApprovalToken, E-Sign) verified successfully.");
     }
     catch (Exception ex)
     {

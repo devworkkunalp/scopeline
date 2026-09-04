@@ -71,6 +71,7 @@ public class OpportunitiesController(AppDbContext db) : ControllerBase
             {
                 Id = Guid.NewGuid(),
                 OpportunityId = o.Id,
+                ApprovalToken = Guid.NewGuid().ToString("N"),
                 Number = $"CR-{count + 10:000}",
                 Status = "draft",
                 Submitted = DateOnly.FromDateTime(DateTime.UtcNow),

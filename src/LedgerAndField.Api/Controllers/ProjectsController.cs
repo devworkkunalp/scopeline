@@ -719,6 +719,7 @@ public class ProjectsController(
             {
                 Id = Guid.NewGuid(),
                 OpportunityId = opp.Id,
+                ApprovalToken = Guid.NewGuid().ToString("N"),
                 Number = $"CR-{count + 10:000}",
                 Status = "draft",
                 Submitted = DateOnly.FromDateTime(DateTime.UtcNow),

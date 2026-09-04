@@ -13,8 +13,13 @@ import Opportunities from './pages/Opportunities.jsx';
 import ChangeOrders from './pages/ChangeOrders.jsx';
 import InvoiceTracking from './pages/InvoiceTracking.jsx';
 import AiAssistant from './pages/AiAssistant.jsx';
+import ClientReviewPortal from './pages/ClientReviewPortal.jsx';
 
 export default function App() {
+  // Check for public review portal magic link token (?token=... or /review/:token)
+  const urlParams = new URLSearchParams(window.location.search);
+  const reviewToken = urlParams.get('token') || (window.location.pathname.startsWith('/review/') ? window.location.pathname.replace('/review/', '') : null);
+
   const [authed, setAuthed] = useState(!!getToken());
   const [user, setUser] = useState(getUser());
   const [workspace, setWorkspace] = useState(null);
@@ -92,6 +97,10 @@ export default function App() {
     setWorkspace(null);
     setProjects([]);
     setActiveProjectId(null);
+  }
+
+  if (reviewToken) {
+    return <ClientReviewPortal token={reviewToken} />;
   }
 
   if (loading) {

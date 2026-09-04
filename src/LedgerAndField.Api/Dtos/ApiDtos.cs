@@ -21,5 +21,7 @@ public record ManualOpportunityRequest(string Title, string Description, string?
 public record GenerateBaselineRequest(string RequirementsText, decimal? ContractValue, decimal? HourlyRate, string? IndustryPreset, int? TimelineWeeks, int? RevisionLimit);
 public record DefenseLetterRequest(string? VendorName, string? VendorContact, string? CustomNotes);
 public record DefenseLetterResponse(string Subject, string Body, string SowReference, string ChallengeVerdict, decimal DefendedAmount);
+public record PublicApproveRequest(string SignerName, string? SignerEmail, string? SignatureData, string? Notes);
+public record PublicDeclineRequest(string? Reason, string? Notes);
 
 
