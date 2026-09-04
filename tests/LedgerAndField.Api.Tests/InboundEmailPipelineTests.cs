@@ -24,7 +24,7 @@ public class InboundEmailPipelineTests
     private InboundEmailController CreateController(AppDbContext db, Guid workspaceId)
     {
         var extractor = new DocumentTextExtractor();
-        return new InboundEmailController(db, extractor, null!, null!)
+        return new InboundEmailController(db, extractor)
         {
             ControllerContext = new ControllerContext
             {

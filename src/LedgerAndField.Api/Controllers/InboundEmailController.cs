@@ -13,9 +13,7 @@ namespace LedgerAndField.Api.Controllers;
 [ApiController]
 public class InboundEmailController(
     AppDbContext db,
-    DocumentTextExtractor extractor,
-    AnalysisService analysis,
-    HeuristicAnalyzer heuristicAnalyzer) : ControllerBase
+    DocumentTextExtractor extractor) : ControllerBase
 {
     private Guid WorkspaceId => TokenService.WorkspaceId(User);
 
