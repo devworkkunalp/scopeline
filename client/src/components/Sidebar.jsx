@@ -1,4 +1,3 @@
-// Sidebar for Scopeline
 export default function Sidebar({
   page,
   setPage,
@@ -10,6 +9,8 @@ export default function Sidebar({
   onLogout,
   mobileOpen,
   onCloseMobile,
+  onOpenGuide,
+  onOpenFeedback,
 }) {
   const activeProject = projects?.find((p) => p.id === activeProjectId);
   const perspective = activeProject?.perspective || workspace?.perspective || user?.perspective || 'vendor';
@@ -112,6 +113,61 @@ export default function Sidebar({
           <div className="group-label">Ask</div>
           {navItem('07', 'AI Assistant', 'assistant')}
         </nav>
+
+        {/* Quickstart & Feedback Buttons */}
+        <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              onOpenGuide?.();
+              onCloseMobile?.();
+            }}
+            style={{
+              background: 'rgba(232, 93, 46, 0.15)',
+              border: '1px solid rgba(232, 93, 46, 0.4)',
+              color: '#F3D9CC',
+              borderRadius: '3px',
+              padding: '6px 10px',
+              fontSize: '11px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              fontFamily: "'IBM Plex Mono', monospace",
+              textAlign: 'left',
+            }}
+          >
+            <span>🚀</span>
+            <span>Quickstart Guide</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onOpenFeedback?.();
+              onCloseMobile?.();
+            }}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#DCE2EE',
+              borderRadius: '3px',
+              padding: '6px 10px',
+              fontSize: '11px',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              fontFamily: "'IBM Plex Mono', monospace",
+              textAlign: 'left',
+            }}
+          >
+            <span>💡</span>
+            <span>Give Product Feedback</span>
+          </button>
+        </div>
 
         {/* Footer */}
         <div className="sidebar-foot">

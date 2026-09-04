@@ -98,7 +98,8 @@ using (var scope = app.Services.CreateScope())
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"SignedAt\" timestamp with time zone;");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"SignatureData\" text;");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"ChangeRequests\" ADD COLUMN IF NOT EXISTS \"ClientNotes\" text;");
-        Console.WriteLine("[DB INIT] Column migrations (PhoneNumber, TrialEndsAt, Perspective, ApprovalToken, E-Sign) verified successfully.");
+        await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS \"Feedbacks\" (\"Id\" uuid PRIMARY KEY, \"WorkspaceId\" uuid, \"UserEmail\" text, \"Category\" text, \"Rating\" integer, \"FeedbackText\" text, \"MarketFitNotes\" text, \"CreatedAt\" timestamp with time zone);");
+        Console.WriteLine("[DB INIT] Column migrations and Feedbacks table verified successfully.");
     }
     catch (Exception ex)
     {

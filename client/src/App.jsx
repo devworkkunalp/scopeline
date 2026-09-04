@@ -16,6 +16,8 @@ import AiAssistant from './pages/AiAssistant.jsx';
 import ClientReviewPortal from './pages/ClientReviewPortal.jsx';
 import NotificationToast from './components/NotificationToast.jsx';
 import NotificationCenter from './components/NotificationCenter.jsx';
+import GettingStartedModal from './components/GettingStartedModal.jsx';
+import FeedbackModal from './components/FeedbackModal.jsx';
 
 export default function App() {
   // Check for public review portal magic link token (?token=... or /review/:token)
@@ -30,6 +32,10 @@ export default function App() {
   const [page, setPage] = useState('dashboard');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // User Flow Guide & Feedback Modals
+  const [showGuide, setShowGuide] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Real-time Inbound Activity & Scope Change Notifications
   const [toasts, setToasts] = useState([]);
@@ -211,6 +217,36 @@ export default function App() {
         }}
       />
 
+      {showGuide && (
+        <GettingStartedModal
+          onClose={() => setShowGuide(false)}
+          onNavigate={(pageKey) => setPage(pageKey)}
+          perspective={currentPerspective}
+        />
+      )}
+
+      {showFeedback && (
+        <FeedbackModal
+          onClose={() => setShowFeedback(false)}
+          user={user}
+          showToast={(msg) => {
+            setToasts((prev) => [
+              {
+                id: String(Date.now()),
+                type: 'feedback',
+                badge: 'FEEDBACK RECEIVED',
+                title: 'Thank you for your feedback!',
+                message: msg,
+                timeAgo: 'Just now',
+                createdAt: new Date(),
+                read: true,
+              },
+              ...prev,
+            ]);
+          }}
+        />
+      )}
+
       <Sidebar
         page={page}
         setPage={setPage}
@@ -222,6 +258,8 @@ export default function App() {
         onLogout={handleLogout}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
+        onOpenGuide={() => setShowGuide(true)}
+        onOpenFeedback={() => setShowFeedback(true)}
       />
 
       <main className="main">
@@ -282,7 +320,51 @@ export default function App() {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setShowGuide(true)}
+              style={{
+                background: '#EFEBE1',
+                border: '1px solid #D8D2C2',
+                color: '#14213D',
+                borderRadius: '4px',
+                padding: '5px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Mono', monospace",
+              }}
+            >
+              <span>🚀</span>
+              <span>Quickstart Guide</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowFeedback(true)}
+              style={{
+                background: 'rgba(232, 93, 46, 0.08)',
+                border: '1px solid #E85D2E',
+                color: '#E85D2E',
+                borderRadius: '4px',
+                padding: '5px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Mono', monospace",
+              }}
+            >
+              <span>💡</span>
+              <span>Feedback</span>
+            </button>
+
             <NotificationCenter
               notifications={notificationHistory}
               onClear={() => setNotificationHistory([])}

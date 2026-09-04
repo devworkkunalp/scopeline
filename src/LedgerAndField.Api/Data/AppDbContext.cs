@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ChangeRequest> ChangeRequests => Set<ChangeRequest>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<AsyncJob> AsyncJobs => Set<AsyncJob>();
+    public DbSet<UserFeedback> Feedbacks => Set<UserFeedback>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {

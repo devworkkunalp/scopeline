@@ -109,6 +109,9 @@ export const api = {
   // AI Assistant
   ask: (projectId, question)   => request(`/projects/${projectId}/assistant/query`, { method: "POST", body: JSON.stringify({ question }) }),
 
+  // Feedback & Market Fit
+  submitFeedback: (body)       => request("/feedback", { method: "POST", body: JSON.stringify(body) }),
+
   // Async Jobs
   job: (id)                    => request(`/jobs/${id}`),
 };
