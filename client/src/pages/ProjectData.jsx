@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import TitleBlock from '../components/TitleBlock.jsx';
 import ScopeCheckerModal from '../components/ScopeCheckerModal.jsx';
 import MomLoggerModal from '../components/MomLoggerModal.jsx';
+import InboundEmailModal from '../components/InboundEmailModal.jsx';
 
 const EXT_CLASSES = {
   pdf: 'pdf',
@@ -14,7 +15,7 @@ const EXT_CLASSES = {
   tkt: 'tkt',
 };
 
-export default function ProjectData({ activeProject, setPage }) {
+export default function ProjectData({ activeProject, setPage, perspective = 'vendor' }) {
   const [docs, setDocs] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +23,7 @@ export default function ProjectData({ activeProject, setPage }) {
   const [uploading, setUploading] = useState(false);
   const [showChecker, setShowChecker] = useState(false);
   const [showMomLogger, setShowMomLogger] = useState(false);
+  const [showInboundModal, setShowInboundModal] = useState(false);
   const [toast, setToast] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef();
@@ -145,10 +147,11 @@ export default function ProjectData({ activeProject, setPage }) {
                     className="btn small"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowMomLogger(true);
+                      setShowInboundModal(true);
                     }}
+                    id="btn-inbound-email"
                   >
-                    ✉️ Forward Email / Drop-In
+                    📬 Inbound Email Forwarding
                   </button>
                   <button
                     type="button"
@@ -271,6 +274,20 @@ export default function ProjectData({ activeProject, setPage }) {
           onAdded={(opp, isCR) => {
             showToast(isCR ? 'Change Request with proof generated.' : 'Scope opportunity added.');
             setTimeout(() => setPage(isCR ? 'change-orders' : 'opportunities'), 600);
+          }}
+        />
+      )}
+
+      {showInboundModal && (
+        <InboundEmailModal
+          activeProject={activeProject}
+          onClose={() => setShowInboundModal(false)}
+          perspective={perspective}
+          setPage={setPage}
+          onIngested={(result) => {
+            showToast(result.isOutOfScope ? 'Inbound email ingested & Out-of-Scope Opportunity auto-created!' : 'Inbound email ingested & verified in-scope.');
+            api.documents(activeProject.id).then(setDocs);
+            api.events(activeProject.id).then(setEvents);
           }}
         />
       )}

@@ -48,6 +48,8 @@ export const api = {
   project:       (id)          => request(`/projects/${id}`),
   patchProject:  (id, body)    => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   sowDrift:      (id)          => request(`/projects/${id}/sow-drift`),
+  inboundAddress:(id)          => request(`/projects/${id}/inbound-address`),
+  simulateInboundEmail:(id, body) => request(`/projects/${id}/inbound-simulate`, { method: "POST", body: JSON.stringify(body) }),
 
   // Contract / SOW
   uploadContract: (id, file) => {

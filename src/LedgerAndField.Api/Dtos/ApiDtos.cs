@@ -70,3 +70,36 @@ public record SowDriftAnalysisDto(
     string DriftRiskLevel,
     List<SowDriftAlert> Alerts
 );
+
+public record InboundEmailWebhookRequest(
+    string? From,
+    string? To,
+    string? Subject,
+    string? Text,
+    string? Html,
+    string? Eml,
+    string? MessageId
+);
+
+public record InboundEmailSimulationRequest(
+    string From,
+    string Subject,
+    string Body,
+    decimal? ClaimedHours = null,
+    decimal? HourlyRate = null,
+    bool CreateChangeRequest = true
+);
+
+public record InboundEmailResultDto(
+    bool Success,
+    string Message,
+    Guid? ProjectId,
+    string? ProjectName,
+    Guid? DocumentId,
+    Guid? OpportunityId,
+    string? OpportunityTitle,
+    decimal? BillableValue,
+    string? Verdict,
+    string? Clause,
+    bool IsOutOfScope
+);
