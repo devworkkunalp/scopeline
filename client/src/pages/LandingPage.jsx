@@ -1085,31 +1085,195 @@ export default function LandingPage({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* INTERACTIVE USER JOURNEY WORKFLOW */}
       <section id="how-it-works" className="landing-section how-section">
         <div className="section-head">
-          <div className="section-kicker">3 Simple Steps</div>
-          <h2>How Scopeline Recovers Your Lost Revenue</h2>
+          <div className="section-kicker">Interactive User Journey</div>
+          <h2>How Scopeline Works From Day 1</h2>
+          <p>A frictionless 4-step workflow designed to eliminate manual data entry and protect project margins.</p>
         </div>
 
-        <div className="steps-grid">
-          <div className="step-card">
-            <div className="step-num">01</div>
-            <h3>Establish SOW Baseline</h3>
-            <p>Upload your signed contract or let the AI build protective scope rules and revision caps from your proposal.</p>
+        {/* Journey Perspective Switcher */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'var(--paper-2)',
+              padding: 4,
+              borderRadius: 6,
+              border: '1px solid var(--line)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setTourPerspective('vendor')}
+              style={{
+                padding: '8px 18px',
+                border: 'none',
+                borderRadius: 4,
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Mono', monospace",
+                background: tourPerspective === 'vendor' ? 'var(--navy)' : 'transparent',
+                color: tourPerspective === 'vendor' ? '#fff' : 'var(--steel)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              🏢 Agency / Vendor Flow
+            </button>
+            <button
+              type="button"
+              onClick={() => setTourPerspective('client')}
+              style={{
+                padding: '8px 18px',
+                border: 'none',
+                borderRadius: 4,
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Mono', monospace",
+                background: tourPerspective === 'client' ? '#2563EB' : 'transparent',
+                color: tourPerspective === 'client' ? '#fff' : 'var(--steel)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              🛡️ Client / Buyer Shield Flow
+            </button>
           </div>
+        </div>
 
-          <div className="step-card">
-            <div className="step-num">02</div>
-            <h3>Log MOM &amp; Forward Activity</h3>
-            <p>Log meeting minutes, forward client requests, or paste chat threads. The AI continuously scans for unbilled expansion.</p>
-          </div>
+        {/* 4-Step Journey Grid */}
+        <div className="steps-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+          {tourPerspective === 'vendor' ? (
+            <>
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: 'var(--orange)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>01</div>
+                  <span style={{ fontSize: 22 }}>📜</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Lock SOW Baseline</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Upload your signed SOW/MSA (PDF/Word). AI automatically extracts covered deliverables (§1), exclusions (§2), and agreed billing rates ($150/hr).
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--orange)', fontWeight: 600 }}>
+                  ✓ Signed Priority Rule
+                </div>
+              </div>
 
-          <div className="step-card">
-            <div className="step-num">03</div>
-            <h3>Generate CRs &amp; Collect Cash</h3>
-            <p>Export grounded Change Request PDFs, get signed approval, and reconcile payments seamlessly into your dashboard.</p>
-          </div>
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: 'var(--orange)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>02</div>
+                  <span style={{ fontSize: 22 }}>📥</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Stream Inbound Asks</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Forward client emails to your live inbox (<code>cloudmailin.net</code>), log post-meeting MOM notes, or drop Slack chats. Zero manual typing.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--green)', fontWeight: 600 }}>
+                  ✓ Real-time Webhook Ingestion
+                </div>
+              </div>
+
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: 'var(--orange)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>03</div>
+                  <span style={{ fontSize: 22 }}>⚡</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Grounded Scope Audit</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  AI cross-references every ask against the contract baseline, estimates realistic hours by role, and establishes 3-way grounded billable proof.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--orange)', fontWeight: 600 }}>
+                  ✓ 4 Verification Badges
+                </div>
+              </div>
+
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: 'var(--orange)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>04</div>
+                  <span style={{ fontSize: 22 }}>✍️</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>1-Click Approval &amp; Cash</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Generate Change Orders (CR-014, CR-017...), share passwordless client e-sign links (<code>/review/:token</code>), and reconcile invoices with 1 click.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--green)', fontWeight: 600 }}>
+                  ✓ Friction-Free Digital Sign-Off
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: '#2563EB', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>01</div>
+                  <span style={{ fontSize: 22 }}>🛡️</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Lock Vendor Warranty</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Upload vendor contract to lock in the agreed baseline, 90-day post-launch warranty SLAs (§5.1), and fixed price milestone terms.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: '#2563EB', fontWeight: 600 }}>
+                  ✓ Warranty SLA Protection
+                </div>
+              </div>
+
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: '#2563EB', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>02</div>
+                  <span style={{ fontSize: 22 }}>📑</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Ingest Invoices &amp; Claims</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Upload vendor supplementary invoices, change claims, or email billing requests for automated contractual verification.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: '#2563EB', fontWeight: 600 }}>
+                  ✓ Automated Claim Ingestion
+                </div>
+              </div>
+
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: '#2563EB', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>03</div>
+                  <span style={{ fontSize: 22 }}>🔍</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Audit Double-Billing</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Scopeline automatically flags redundant charges, defect rework billed as new features, and unapproved variation rates.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: '#DC2626', fontWeight: 600 }}>
+                  ✓ Overbilling Shield Active
+                </div>
+              </div>
+
+              <div className="step-card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '24px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div className="step-num" style={{ color: '#2563EB', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18 }}>04</div>
+                  <span style={{ fontSize: 22 }}>⚖️</span>
+                </div>
+                <h3 style={{ fontSize: 16, marginBottom: 8, color: 'var(--navy)' }}>Dispute &amp; Protect Budget</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--steel)', lineHeight: 1.5 }}>
+                  Generate legal SOW Pushback &amp; Dispute Letters with cited contract clauses to withhold unauthorized fees before milestone release.
+                </p>
+                <div style={{ marginTop: 12, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--green)', fontWeight: 600 }}>
+                  ✓ Budget Protected &amp; Neutralized
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Quick CTA inside Journey */}
+        <div style={{ marginTop: 32, textAlign: 'center' }}>
+          <button
+            type="button"
+            className="btn orange large"
+            onClick={() => openAuth('register', tourPerspective)}
+            style={tourPerspective === 'client' ? { background: '#2563EB', borderColor: '#2563EB' } : {}}
+          >
+            🚀 Experience The {tourPerspective === 'client' ? 'Client Shield' : 'Agency'} Workflow Free →
+          </button>
         </div>
       </section>
 
