@@ -17,63 +17,24 @@ export default function NotificationCenter({ notifications = [], onClear, onSele
   }, []);
 
   return (
-    <div className="notif-center-wrapper" ref={containerRef} style={{ position: 'relative' }}>
+    <div className="notif-center-wrapper" ref={containerRef}>
       <button
         type="button"
         className={`notif-bell-btn ${unreadCount > 0 ? 'has-unread' : ''}`}
         onClick={() => setOpen((o) => !o)}
         aria-label="View Inbound Activity and Notifications"
-        style={{
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.16)',
-          color: '#DCE2EE',
-          borderRadius: '4px',
-          padding: '6px 10px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          cursor: 'pointer',
-          fontSize: '12px',
-          fontWeight: 600,
-          transition: 'all 0.15s ease',
-        }}
       >
-        <span style={{ fontSize: '14px' }}>🔔</span>
-        <span>Activity Alerts</span>
+        <span className="notif-bell-icon">🔔</span>
+        <span className="notif-bell-label">Activity Alerts</span>
         {unreadCount > 0 && (
-          <span
-            style={{
-              background: '#E85D2E',
-              color: '#fff',
-              fontSize: '10px',
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontWeight: 700,
-              padding: '1px 5px',
-              borderRadius: '10px',
-              lineHeight: 1.2,
-            }}
-          >
+          <span className="notif-unread-badge">
             {unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div
-          className="notif-dropdown-menu"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            width: '360px',
-            background: '#14213D',
-            color: '#DCE2EE',
-            borderRadius: '6px',
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12)',
-            zIndex: 1000,
-            overflow: 'hidden',
-          }}
-        >
+        <div className="notif-dropdown-menu">
           <div
             style={{
               padding: '12px 14px',

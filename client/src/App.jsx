@@ -263,120 +263,7 @@ export default function App() {
       />
 
       <main className="main">
-        {/* Top Real-time System Bar */}
-        <div
-          className="top-system-bar"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '8px 24px',
-            background: '#FFFFFF',
-            borderBottom: '1px solid #D8D2C2',
-            position: 'sticky',
-            top: 0,
-            zIndex: 90,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontFamily: "'IBM Plex Mono', monospace",
-                color: '#5C6B73',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {activeProject ? `${activeProject.name}` : 'Scopeline'}
-            </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '10.5px',
-                color: '#2F6F4E',
-                background: '#D8E8DD',
-                padding: '2px 8px',
-                borderRadius: '3px',
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontWeight: 600,
-              }}
-              title="CloudMailin Webhook Listening at 4d5fcfd49f452cf19bbf@cloudmailin.net"
-            >
-              <span
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#10B981',
-                  display: 'inline-block',
-                  boxShadow: '0 0 6px #10B981',
-                }}
-              />
-              LIVE INBOX LISTENER ACTIVE
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setShowGuide(true)}
-              style={{
-                background: '#EFEBE1',
-                border: '1px solid #D8D2C2',
-                color: '#14213D',
-                borderRadius: '4px',
-                padding: '5px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                cursor: 'pointer',
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}
-            >
-              <span>🚀</span>
-              <span>Quickstart Guide</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowFeedback(true)}
-              style={{
-                background: 'rgba(232, 93, 46, 0.08)',
-                border: '1px solid #E85D2E',
-                color: '#E85D2E',
-                borderRadius: '4px',
-                padding: '5px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                cursor: 'pointer',
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}
-            >
-              <span>💡</span>
-              <span>Feedback</span>
-            </button>
-
-            <NotificationCenter
-              notifications={notificationHistory}
-              onClear={() => setNotificationHistory([])}
-              onSelect={(notif) => {
-                setPage(notif.type === 'inbound_email' ? 'data' : 'opportunities');
-              }}
-              activeProject={activeProject}
-            />
-          </div>
-        </div>
-
-        {/* Mobile Header Bar — visible only on responsive/mobile screens */}
+        {/* Mobile Header Bar — Topmost primary navigation on mobile screens */}
         <div className="mobile-header-bar">
           <button
             type="button"
@@ -389,6 +276,63 @@ export default function App() {
           <div className="mobile-brand">
             <span className="brand-title">SCOPELINE</span>
             <div className="swatch" />
+          </div>
+          <div className="mobile-header-actions">
+            <NotificationCenter
+              notifications={notificationHistory}
+              onClear={() => setNotificationHistory([])}
+              onSelect={(notif) => {
+                setPage(notif.type === 'inbound_email' ? 'data' : 'opportunities');
+              }}
+              activeProject={activeProject}
+            />
+          </div>
+        </div>
+
+        {/* Top Real-time System Bar (Desktop sticky bar & Mobile contextual subbar) */}
+        <div className="top-system-bar">
+          <div className="top-system-left">
+            <span className="top-project-badge">
+              {activeProject ? `${activeProject.name}` : 'Scopeline'}
+            </span>
+            <span
+              className="top-listener-pill"
+              title="CloudMailin Webhook Listening at 4d5fcfd49f452cf19bbf@cloudmailin.net"
+            >
+              <span className="live-dot" />
+              <span className="listener-text">LIVE INBOX LISTENER ACTIVE</span>
+            </span>
+          </div>
+
+          <div className="top-system-right">
+            <button
+              type="button"
+              className="top-action-btn quickstart"
+              onClick={() => setShowGuide(true)}
+            >
+              <span>🚀</span>
+              <span>Quickstart Guide</span>
+            </button>
+
+            <button
+              type="button"
+              className="top-action-btn feedback"
+              onClick={() => setShowFeedback(true)}
+            >
+              <span>💡</span>
+              <span>Feedback</span>
+            </button>
+
+            <div className="desktop-only-notif">
+              <NotificationCenter
+                notifications={notificationHistory}
+                onClear={() => setNotificationHistory([])}
+                onSelect={(notif) => {
+                  setPage(notif.type === 'inbound_email' ? 'data' : 'opportunities');
+                }}
+                activeProject={activeProject}
+              />
+            </div>
           </div>
         </div>
 

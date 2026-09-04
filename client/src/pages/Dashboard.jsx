@@ -95,20 +95,20 @@ export default function Dashboard({ setPage, setActiveProjectId, activeProjectId
 
         {/* SOW Drift & Burn Rate Monitor */}
         {projects.length > 0 && (
-          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)' }}>
+          <div className="dashboard-project-selector-bar">
+            <div className="selector-label">
               Target Project Scope Analysis:
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="project-chips-scroll">
               {projects.map((p) => (
                 <button
                   key={p.id}
-                  className={`btn small ${selectedProjectId === p.id ? 'orange' : 'ghost'}`}
+                  type="button"
+                  className={`project-chip-btn ${selectedProjectId === p.id ? 'active' : ''}`}
                   onClick={() => {
                     setSelectedProjectId(p.id);
                     setActiveProjectId?.(p.id);
                   }}
-                  style={{ fontSize: 12, padding: '4px 10px' }}
                 >
                   {p.name}
                 </button>
