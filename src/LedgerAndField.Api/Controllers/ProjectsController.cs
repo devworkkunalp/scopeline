@@ -104,6 +104,133 @@ public class ProjectsController(
         return Ok(response);
     }
 
+    [HttpGet("projects/{id:guid}/sow-drift")]
+    [HttpGet("api/projects/{id:guid}/sow-drift")]
+    public async Task<IActionResult> GetSowDrift(Guid id)
+    {
+        var p = await Load(id);
+        if (p is null) return NotFound("Project not found");
+
+        var baseline = p.ScopeValue > 0 ? p.ScopeValue : 1m;
+        var invoiced = p.Invoices?.Sum(i => i.Amount) ?? 0m;
+        var collected = p.Invoices?.Sum(i => i.Collected) ?? 0m;
+
+        // Detected scope expansion from active/unrejected opportunities
+        var detectedExp = p.Opportunities?
+            .Where(o => o.Status != "rejected" && o.Status != "discarded")
+            .Sum(o => o.BillableValue) ?? 0m;
+
+        // Approved change orders
+        var approvedCO = p.Opportunities?
+            .Where(o => o.ChangeRequest != null && 
+                       (o.ChangeRequest.Status == "approved" || o.ChangeRequest.Status == "invoiced" || o.Status == "approved"))
+            .Sum(o => o.BillableValue) ?? 0m;
+
+        var projected = baseline + detectedExp;
+        var driftPct = baseline > 0 ? Math.Round((detectedExp / baseline) * 100m, 1) : 0m;
+        var budgetBurnPct = baseline > 0 ? Math.Round((invoiced / baseline) * 100m, 1) : 0m;
+
+        decimal timelinePct = 50.0m;
+        if (p.StartDate.HasValue && p.EndDate.HasValue && p.EndDate.Value > p.StartDate.Value)
+        {
+            var startDt = p.StartDate.Value.ToDateTime(TimeOnly.MinValue);
+            var endDt = p.EndDate.Value.ToDateTime(TimeOnly.MinValue);
+            var totalDays = (endDt - startDt).TotalDays;
+            var elapsedDays = (DateTime.UtcNow - startDt).TotalDays;
+            timelinePct = totalDays > 0 
+                ? Math.Clamp(Math.Round((decimal)(elapsedDays / totalDays * 100), 1), 0m, 100m) 
+                : 0m;
+        }
+
+        string riskLevel;
+        if (driftPct >= 15m || (budgetBurnPct > timelinePct + 20m && timelinePct > 10m))
+        {
+            riskLevel = "critical";
+        }
+        else if (driftPct >= 5m || (budgetBurnPct > timelinePct + 10m))
+        {
+            riskLevel = "moderate";
+        }
+        else
+        {
+            riskLevel = "low";
+        }
+
+        var alerts = new List<SowDriftAlert>();
+
+        var unapprovedExp = detectedExp - approvedCO;
+        if (unapprovedExp > 0)
+        {
+            var isCritical = unapprovedExp >= 0.10m * baseline;
+            alerts.Add(new SowDriftAlert(
+                Severity: isCritical ? "critical" : "warning",
+                Code: "UNAPPROVED_SCOPE_EXPANSION",
+                Title: "Unapproved Scope Expansion",
+                Message: $"Found {unapprovedExp:C0} in detected out-of-scope work not yet formally approved as Change Orders.",
+                RecommendedAction: "Review opportunities and convert to signed Change Requests",
+                ActionPage: "opportunities"
+            ));
+        }
+
+        if (budgetBurnPct > timelinePct + 15m && timelinePct > 5m)
+        {
+            alerts.Add(new SowDriftAlert(
+                Severity: "critical",
+                Code: "BUDGET_VELOCITY_OVERRUN",
+                Title: "Budget Burn Exceeds Timeline Velocity",
+                Message: $"Invoiced burn ({budgetBurnPct}%) is outpacing project schedule ({timelinePct}% elapsed).",
+                RecommendedAction: "Audit recent invoices against contractual milestones",
+                ActionPage: "invoices"
+            ));
+        }
+
+        var uncollected = invoiced - collected;
+        if (uncollected > 0 && invoiced > 0 && (uncollected / invoiced) >= 0.25m)
+        {
+            alerts.Add(new SowDriftAlert(
+                Severity: "info",
+                Code: "OUTSTANDING_RECEIVABLES",
+                Title: "Pending Cash Collection",
+                Message: $"{uncollected:C0} is awaiting payment collection across issued invoices.",
+                RecommendedAction: "Follow up on open invoice disbursements",
+                ActionPage: "invoices"
+            ));
+        }
+
+        var pendingCOCount = p.Opportunities?.Count(o => o.ChangeRequest != null && 
+            (o.ChangeRequest.Status == "draft" || o.ChangeRequest.Status == "pending" || o.ChangeRequest.Status == "submitted")) ?? 0;
+        if (pendingCOCount > 0)
+        {
+            alerts.Add(new SowDriftAlert(
+                Severity: "warning",
+                Code: "PENDING_CHANGE_ORDERS",
+                Title: "Pending Change Orders Awaiting Signoff",
+                Message: $"There are {pendingCOCount} change order(s) pending client authorization.",
+                RecommendedAction: "Send Magic Link approval requests to stakeholders",
+                ActionPage: "change-orders"
+            ));
+        }
+
+        var result = new SowDriftAnalysisDto(
+            ProjectId: p.Id,
+            ProjectName: p.Name,
+            ClientName: p.ClientName,
+            BaselineScopeValue: p.ScopeValue,
+            InvoicedToDate: invoiced,
+            CollectedToDate: collected,
+            DetectedScopeExpansion: detectedExp,
+            ApprovedChangeOrdersValue: approvedCO,
+            ProjectedFinalValue: projected,
+            ScopeDriftPct: driftPct,
+            BudgetBurnPct: budgetBurnPct,
+            TimelineElapsedPct: timelinePct,
+            DriftRiskLevel: riskLevel,
+            Alerts: alerts
+        );
+
+        return Ok(result);
+    }
+
     [HttpGet("projects/{id:guid}/contract")]
     [HttpGet("api/projects/{id:guid}/contract")]
     public async Task<IActionResult> GetContract(Guid id)

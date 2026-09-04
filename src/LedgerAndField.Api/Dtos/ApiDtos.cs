@@ -45,4 +45,28 @@ public record DefenseLetterResponse(
 public record PublicApproveRequest(string SignerName, string? SignerEmail, string? SignatureData, string? Notes);
 public record PublicDeclineRequest(string? Reason, string? Notes);
 
+public record SowDriftAlert(
+    string Severity,
+    string Code,
+    string Title,
+    string Message,
+    string? RecommendedAction,
+    string? ActionPage
+);
 
+public record SowDriftAnalysisDto(
+    Guid ProjectId,
+    string ProjectName,
+    string ClientName,
+    decimal BaselineScopeValue,
+    decimal InvoicedToDate,
+    decimal CollectedToDate,
+    decimal DetectedScopeExpansion,
+    decimal ApprovedChangeOrdersValue,
+    decimal ProjectedFinalValue,
+    decimal ScopeDriftPct,
+    decimal BudgetBurnPct,
+    decimal TimelineElapsedPct,
+    string DriftRiskLevel,
+    List<SowDriftAlert> Alerts
+);

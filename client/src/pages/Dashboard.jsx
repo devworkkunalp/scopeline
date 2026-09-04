@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import TitleBlock from '../components/TitleBlock.jsx';
+import SowDriftCard from '../components/SowDriftCard.jsx';
 
 const fmt = (n, currency = 'USD') =>
   !n && n !== 0 ? '—' :
@@ -18,14 +19,20 @@ const STATUS_COLORS = {
   paid: 'var(--green)',
 };
 
-export default function Dashboard({ setPage, setActiveProjectId, perspective = 'vendor', onTogglePerspective }) {
+export default function Dashboard({ setPage, setActiveProjectId, activeProjectId, perspective = 'vendor', onTogglePerspective }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId || null);
   const isClient = perspective === 'client';
 
   useEffect(() => {
-    api.dashboard().then(setData).catch(console.error).finally(() => setLoading(false));
-  }, []);
+    api.dashboard().then((res) => {
+      setData(res);
+      if (!selectedProjectId && res?.projects?.length > 0) {
+        setSelectedProjectId(activeProjectId || res.projects[0].id);
+      }
+    }).catch(console.error).finally(() => setLoading(false));
+  }, [activeProjectId]);
 
   if (loading) return <div className="spinner" />;
   if (!data) return <div className="content"><div className="empty">Failed to load dashboard.</div></div>;
@@ -85,6 +92,38 @@ export default function Dashboard({ setPage, setActiveProjectId, perspective = '
             <div className="delta up">{isClient ? 'Verified out-of-scope additions' : 'From recovered opportunities'}</div>
           </div>
         </div>
+
+        {/* SOW Drift & Burn Rate Monitor */}
+        {projects.length > 0 && (
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)' }}>
+              Target Project Scope Analysis:
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {projects.map((p) => (
+                <button
+                  key={p.id}
+                  className={`btn small ${selectedProjectId === p.id ? 'orange' : 'ghost'}`}
+                  onClick={() => {
+                    setSelectedProjectId(p.id);
+                    setActiveProjectId?.(p.id);
+                  }}
+                  style={{ fontSize: 12, padding: '4px 10px' }}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedProjectId && (
+          <SowDriftCard
+            projectId={selectedProjectId}
+            setPage={setPage}
+            perspective={perspective}
+          />
+        )}
 
         {/* Recovery Funnel */}
         <section className="block">

@@ -47,6 +47,7 @@ export const api = {
   createProject: (body)        => request("/projects", { method: "POST", body: JSON.stringify(body) }),
   project:       (id)          => request(`/projects/${id}`),
   patchProject:  (id, body)    => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  sowDrift:      (id)          => request(`/projects/${id}/sow-drift`),
 
   // Contract / SOW
   uploadContract: (id, file) => {

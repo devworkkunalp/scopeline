@@ -131,6 +131,14 @@ export default function CompanyProjects({
                         {oppTotal > 0 ? fmt(oppTotal) : '—'}
                       </span>
                     </div>
+                    {oppTotal > 0 && (p.value || p.scopeValue) > 0 && (
+                      <div className="row">
+                        <span>SOW Drift</span>
+                        <span className="v mono" style={{ color: (oppTotal / (p.value || p.scopeValue)) >= 0.15 ? '#DC2626' : 'var(--navy)', fontWeight: 600 }}>
+                          +{Math.round((oppTotal / (p.value || p.scopeValue)) * 100)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
