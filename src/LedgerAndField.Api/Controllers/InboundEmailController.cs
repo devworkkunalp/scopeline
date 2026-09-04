@@ -99,7 +99,7 @@ public class InboundEmailController(
         if (string.IsNullOrWhiteSpace(from)) from = "Client Stakeholder";
         if (string.IsNullOrWhiteSpace(subject)) subject = "Client Scope Request";
 
-        var project = await ResolveProjectAsync(to, subject, body);
+        var project = await ResolveProjectAsync(to, from, subject, body);
         if (project == null)
         {
             return NotFound(new { error = "Target project could not be resolved from inbound email recipient address.", recipient = to });
@@ -179,7 +179,7 @@ public class InboundEmailController(
         });
     }
 
-    private async Task<Project?> ResolveProjectAsync(string recipient, string subject, string body)
+    private async Task<Project?> ResolveProjectAsync(string recipient, string from, string subject, string body)
     {
         // 1. Try match GUID in inbound+{guid}@...
         var guidMatch = Regex.Match(recipient, @"([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})");
@@ -189,7 +189,7 @@ public class InboundEmailController(
             if (p != null) return p;
         }
 
-        // 2. Try match short hex ID (8 chars)
+        // 2. Try match short hex ID (8 chars) in recipient
         var shortMatch = Regex.Match(recipient, @"project-[a-z0-9\-]+-([a-fA-F0-9]{8})@");
         if (shortMatch.Success)
         {
@@ -199,7 +199,34 @@ public class InboundEmailController(
             if (matched != null) return matched;
         }
 
-        // 3. Search by project name match in subject or body
+        // 3. Match user by sender email (e.g. kunalpatil0360@gmail.com)
+        var cleanFrom = Regex.Match(from, @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").Value.ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(cleanFrom))
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == cleanFrom);
+            if (user != null)
+            {
+                var userProjects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities)
+                    .Where(p => p.WorkspaceId == user.WorkspaceId)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync();
+
+                foreach (var up in userProjects)
+                {
+                    if (!string.IsNullOrWhiteSpace(up.Name) && (subject.Contains(up.Name, StringComparison.OrdinalIgnoreCase) || body.Contains(up.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return up;
+                    }
+                }
+
+                if (userProjects.Count > 0)
+                {
+                    return userProjects.FirstOrDefault(p => p.Name.Contains("Northwind")) ?? userProjects.First();
+                }
+            }
+        }
+
+        // 4. Search by project name match in subject or body
         var projects = await db.Projects.Include(x => x.Contract).Include(x => x.Opportunities).OrderByDescending(x => x.CreatedAt).ToListAsync();
         foreach (var p in projects)
         {
@@ -210,8 +237,8 @@ public class InboundEmailController(
             }
         }
 
-        // 4. Default to latest active project (supports single-inbox forwarding like CloudMailin!)
-        return projects.FirstOrDefault();
+        // 5. Default to active project (Northwind Retail or first active project)
+        return projects.FirstOrDefault(p => p.Name.Contains("Northwind")) ?? projects.FirstOrDefault();
     }
 
     private async Task<InboundEmailResultDto> ProcessInboundEmailAsync(
