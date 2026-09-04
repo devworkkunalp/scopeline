@@ -24,12 +24,12 @@ public class InboundEmailController(
     [HttpPost("api/inbound/email")]
     [HttpPost("webhooks/inbound-email")]
     [HttpPost("api/webhooks/inbound-email")]
-    public async Task<IActionResult> HandleInboundWebhook([FromForm] InboundEmailWebhookRequest? formReq, [FromBody] InboundEmailWebhookRequest? jsonReq)
+    public async Task<IActionResult> HandleInboundWebhook()
     {
-        string to = formReq?.To ?? jsonReq?.To ?? "";
-        string from = formReq?.From ?? jsonReq?.From ?? "";
-        string subject = formReq?.Subject ?? jsonReq?.Subject ?? "";
-        string body = formReq?.Text ?? formReq?.Html ?? jsonReq?.Text ?? jsonReq?.Html ?? "";
+        string to = "";
+        string from = "";
+        string subject = "";
+        string body = "";
 
         if (Request.HasFormContentType)
         {

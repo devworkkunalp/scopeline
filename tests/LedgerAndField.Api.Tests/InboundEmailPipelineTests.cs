@@ -70,18 +70,23 @@ public class InboundEmailPipelineTests
 
         var controller = CreateController(db, workspaceId);
 
-        var req = new InboundEmailWebhookRequest(
-            From: "sara.jenkins@acmeglobal.com",
-            To: $"inbound+{projectId}@scopeline.io",
-            Subject: "Urgent request: Add Stripe Multi-Currency Subscriptions",
-            Text: "We need your team to implement EUR and GBP billing with Stripe recurring subscriptions for international buyers before Q4 launch.",
-            Html: null,
-            Eml: null,
-            MessageId: "msg-12345"
-        );
+        var json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            headers = new
+            {
+                from = "sara.jenkins@acmeglobal.com",
+                to = $"inbound+{projectId}@scopeline.io",
+                subject = "Urgent request: Add Stripe Multi-Currency Subscriptions"
+            },
+            plain = "We need your team to implement EUR and GBP billing with Stripe recurring subscriptions for international buyers before Q4 launch."
+        });
+
+        var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+        controller.ControllerContext.HttpContext.Request.Body = stream;
+        controller.ControllerContext.HttpContext.Request.ContentType = "application/json";
 
         // Act
-        var result = await controller.HandleInboundWebhook(null, req);
+        var result = await controller.HandleInboundWebhook();
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
