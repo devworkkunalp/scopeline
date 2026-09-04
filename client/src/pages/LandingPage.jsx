@@ -507,7 +507,7 @@ export default function LandingPage({ onAuthSuccess }) {
           <p>Explore actual screen previews and workflows tailored to your specific role and business model.</p>
 
           {/* Perspective Switcher */}
-          <div style={{ marginTop: 20 }}>
+          <div className="tour-switcher-wrapper">
             <div className="tour-edition-switcher">
               <button
                 type="button"
@@ -632,7 +632,7 @@ export default function LandingPage({ onAuthSuccess }) {
                         </div>
                         <span className="badge" style={{ background: '#059669', color: '#fff', fontSize: 10.5 }}>✓ Signed Priority</span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div className="mock-clauses-grid">
                         <div style={{ background: '#F8FAFC', padding: 10, borderRadius: 4, border: '1px solid #E2E8F0' }}>
                           <span className="mock-clause-badge">§1.0 BASE DELIVERABLES</span>
                           <div style={{ fontSize: 11.5, color: '#334155', lineHeight: 1.45 }}>
@@ -804,7 +804,7 @@ export default function LandingPage({ onAuthSuccess }) {
                         </div>
                         <span className="badge" style={{ background: '#2563EB', color: '#fff', fontSize: 10.5 }}>🛡️ Buyer Shield Active</span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div className="mock-clauses-grid">
                         <div style={{ background: '#F8FAFC', padding: 10, borderRadius: 4, border: '1px solid #CBD5E1' }}>
                           <span className="mock-clause-badge">§1.2 INCLUDED DELIVERABLES</span>
                           <div style={{ fontSize: 11.5, color: '#1E293B', lineHeight: 1.45 }}>
