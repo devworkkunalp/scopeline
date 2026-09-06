@@ -10,7 +10,7 @@ namespace LedgerAndField.Api.Controllers;
 
 [Authorize]
 [ApiController]
-public class OnboardingController(AppDbContext db) : ControllerBase
+public class OnboardingController(AppDbContext db, NotificationService notifier) : ControllerBase
 {
     private Guid UserId => TokenService.UserId(User);
     private Guid WorkspaceId => TokenService.WorkspaceId(User);
@@ -83,6 +83,20 @@ public class OnboardingController(AppDbContext db) : ControllerBase
         user.Onboarded = true;
         user.OnboardingStep = 4;
         await db.SaveChangesAsync();
+
+        var firstProject = await db.Projects.FirstOrDefaultAsync(p => p.WorkspaceId == user.WorkspaceId);
+
+        _ = Task.Run(async () =>
+        {
+            await notifier.NotifyOnboardingCompleteAsync(
+                user.Email,
+                user.DisplayName,
+                user.Workspace?.Name ?? "My Company",
+                firstProject?.Name ?? "First Project",
+                firstProject?.ScopeValue,
+                user.Workspace?.Perspective ?? "vendor"
+            );
+        });
 
         return Ok(new
         {

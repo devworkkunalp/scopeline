@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LedgerAndField.Api.Controllers;
 
 [ApiController]
-public class AuthController(AppDbContext db, TokenService tokens) : ControllerBase
+public class AuthController(AppDbContext db, TokenService tokens, NotificationService notifier) : ControllerBase
 {
     private readonly PasswordHasher<User> _hasher = new();
     private static readonly System.Text.RegularExpressions.Regex EmailRegex = 
@@ -62,6 +62,12 @@ public class AuthController(AppDbContext db, TokenService tokens) : ControllerBa
         db.Workspaces.Add(workspace);
         db.Users.Add(user);
         await db.SaveChangesAsync();
+
+        // Fire-and-forget notification dispatch
+        _ = Task.Run(async () =>
+        {
+            await notifier.NotifyNewSignupAsync(user.Email, user.DisplayName, workspace.Name, user.PhoneNumber, user.Role, workspace.Perspective);
+        });
 
         var token = tokens.Create(user, workspace);
         return Ok(new AuthResponse(token, user.Email, workspace.Name, workspace.Id, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, 30, workspace.Perspective));

@@ -23,6 +23,7 @@ builder.Services.AddSingleton<ChangeOrderPdfService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<AnalysisService>();
+builder.Services.AddHttpClient<NotificationService>();
 
 var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(postgresConn))
