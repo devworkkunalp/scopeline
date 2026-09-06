@@ -86,17 +86,21 @@ public class OnboardingController(AppDbContext db, NotificationService notifier)
 
         var firstProject = await db.Projects.FirstOrDefaultAsync(p => p.WorkspaceId == user.WorkspaceId);
 
-        _ = Task.Run(async () =>
+        try
         {
-            await notifier.NotifyOnboardingCompleteAsync(
-                user.Email,
-                user.DisplayName,
-                user.Workspace?.Name ?? "My Company",
-                firstProject?.Name ?? "First Project",
-                firstProject?.ScopeValue,
-                user.Workspace?.Perspective ?? "vendor"
+            await Task.WhenAny(
+                notifier.NotifyOnboardingCompleteAsync(
+                    user.Email,
+                    user.DisplayName,
+                    user.Workspace?.Name ?? "My Company",
+                    firstProject?.Name ?? "First Project",
+                    firstProject?.ScopeValue,
+                    user.Workspace?.Perspective ?? "vendor"
+                ),
+                Task.Delay(3000)
             );
-        });
+        }
+        catch { /* Never block user onboarding on notification failure */ }
 
         return Ok(new
         {

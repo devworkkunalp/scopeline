@@ -63,11 +63,15 @@ public class AuthController(AppDbContext db, TokenService tokens, NotificationSe
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        // Fire-and-forget notification dispatch
-        _ = Task.Run(async () =>
+        // Reliable notification dispatch (with 3-second safety timeout)
+        try
         {
-            await notifier.NotifyNewSignupAsync(user.Email, user.DisplayName, workspace.Name, user.PhoneNumber, user.Role, workspace.Perspective);
-        });
+            await Task.WhenAny(
+                notifier.NotifyNewSignupAsync(user.Email, user.DisplayName, workspace.Name, user.PhoneNumber, user.Role, workspace.Perspective),
+                Task.Delay(3000)
+            );
+        }
+        catch { /* Never block user registration on notification failure */ }
 
         var token = tokens.Create(user, workspace);
         return Ok(new AuthResponse(token, user.Email, workspace.Name, workspace.Id, user.DisplayName, user.Role, user.Onboarded, user.OnboardingStep, user.PhoneNumber, 30, workspace.Perspective));

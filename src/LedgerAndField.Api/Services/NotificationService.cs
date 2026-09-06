@@ -40,10 +40,13 @@ public class NotificationService(IConfiguration config, ILogger<NotificationServ
     {
         try
         {
-            var accountSid = config["Twilio:AccountSid"] ?? Environment.GetEnvironmentVariable("TWILIO_ACCOUNT_SID");
-            var authToken = config["Twilio:AuthToken"] ?? Environment.GetEnvironmentVariable("TWILIO_AUTH_TOKEN");
-            var configuredFrom = config["Twilio:FromNumber"] ?? Environment.GetEnvironmentVariable("TWILIO_FROM_NUMBER") ?? "whatsapp:+14155238886";
-            var toNumber = config["Twilio:ToNumber"] ?? Environment.GetEnvironmentVariable("TWILIO_TO_NUMBER");
+            var accountSid = GetConfigValue("Twilio:AccountSid", "TWILIO_ACCOUNT_SID", "Twilio__AccountSid");
+            var authToken = GetConfigValue("Twilio:AuthToken", "TWILIO_AUTH_TOKEN", "Twilio__AuthToken");
+            var configuredFrom = GetConfigValue("Twilio:FromNumber", "TWILIO_FROM_NUMBER", "Twilio__FromNumber") ?? "whatsapp:+14155238886";
+            var toNumber = GetConfigValue("Twilio:ToNumber", "TWILIO_TO_NUMBER", "Twilio__ToNumber") ?? "whatsapp:+917387028577";
+
+            logger.LogInformation("[NOTIFIER] Dispatching alert. AccountSid configured: {HasSid}, To: {To}", 
+                !string.IsNullOrWhiteSpace(accountSid), toNumber);
 
             if (!string.IsNullOrWhiteSpace(accountSid) && !string.IsNullOrWhiteSpace(authToken) && !string.IsNullOrWhiteSpace(toNumber))
             {
@@ -61,26 +64,34 @@ public class NotificationService(IConfiguration config, ILogger<NotificationServ
                 bool sent = false;
                 foreach (var from in fromCandidates)
                 {
-                    var req = new HttpRequestMessage(HttpMethod.Post, url);
-                    req.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-                    req.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                    try
                     {
-                        { "From", from },
-                        { "To", cleanToNumber },
-                        { "Body", message }
-                    });
+                        var req = new HttpRequestMessage(HttpMethod.Post, url);
+                        req.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                        req.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                        {
+                            { "From", from },
+                            { "To", cleanToNumber },
+                            { "Body", message }
+                        });
 
-                    var res = await http.SendAsync(req);
-                    if (res.IsSuccessStatusCode)
-                    {
-                        logger.LogInformation("[NOTIFIER] WhatsApp notification sent via {From} to {To}", from, cleanToNumber);
-                        sent = true;
-                        break;
-                    }
-                    else
-                    {
+                        var res = await http.SendAsync(req);
                         var body = await res.Content.ReadAsStringAsync();
-                        logger.LogWarning("[NOTIFIER] WhatsApp attempt via {From} failed ({Status}): {Body}", from, res.StatusCode, body);
+
+                        if (res.IsSuccessStatusCode)
+                        {
+                            logger.LogInformation("[NOTIFIER] WhatsApp notification sent via {From} to {To}", from, cleanToNumber);
+                            sent = true;
+                            break;
+                        }
+                        else
+                        {
+                            logger.LogWarning("[NOTIFIER] WhatsApp attempt via {From} failed ({Status}): {Body}", from, res.StatusCode, body);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "[NOTIFIER] WhatsApp request error for {From}", from);
                     }
                 }
 
@@ -88,7 +99,7 @@ public class NotificationService(IConfiguration config, ILogger<NotificationServ
 
                 // Attempt 2: SMS Fallback to user's phone
                 var rawTo = cleanToNumber.Replace("whatsapp:", "");
-                var smsFrom = (config["Twilio:SmsFromNumber"] ?? "+18452951974").Replace("whatsapp:", "");
+                var smsFrom = (GetConfigValue("Twilio:SmsFromNumber", "TWILIO_SMS_FROM_NUMBER", "Twilio__SmsFromNumber") ?? "+18452951974").Replace("whatsapp:", "");
                 
                 var smsReq = new HttpRequestMessage(HttpMethod.Post, url);
                 smsReq.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
@@ -113,11 +124,45 @@ public class NotificationService(IConfiguration config, ILogger<NotificationServ
                 return;
             }
 
-            logger.LogInformation("[NOTIFIER] WhatsApp credentials not configured. Notification message: \n{Message}", message);
+            // 2. CallMeBot Fallback (if configured)
+            var callMeBotPhone = GetConfigValue("WhatsApp:Phone", "WHATSAPP_PHONE", "WhatsApp__Phone");
+            var callMeBotKey = GetConfigValue("WhatsApp:ApiKey", "WHATSAPP_API_KEY", "WhatsApp__ApiKey");
+
+            if (!string.IsNullOrWhiteSpace(callMeBotPhone) && !string.IsNullOrWhiteSpace(callMeBotKey))
+            {
+                var encodedMsg = Uri.EscapeDataString(message);
+                var callMeBotUrl = $"https://api.callmebot.com/whatsapp.php?phone={callMeBotPhone}&text={encodedMsg}&apikey={callMeBotKey}";
+                
+                var res = await http.GetAsync(callMeBotUrl);
+                if (res.IsSuccessStatusCode)
+                {
+                    logger.LogInformation("[NOTIFIER] CallMeBot WhatsApp notification sent successfully to {Phone}", callMeBotPhone);
+                }
+                else
+                {
+                    logger.LogWarning("[NOTIFIER] CallMeBot API returned error {Status}", res.StatusCode);
+                }
+                return;
+            }
+
+            logger.LogWarning("[NOTIFIER] No WhatsApp/Twilio credentials found. Notification: \n{Message}", message);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "[NOTIFIER] Failed to send notification");
         }
+    }
+
+    private string? GetConfigValue(string configKey, params string[] envKeys)
+    {
+        var val = config[configKey];
+        if (!string.IsNullOrWhiteSpace(val)) return val.Trim();
+
+        foreach (var key in envKeys)
+        {
+            var envVal = Environment.GetEnvironmentVariable(key);
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
+        }
+        return null;
     }
 }
